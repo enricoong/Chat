@@ -8,7 +8,7 @@ public class Main {
 
    public static void main(String[] args) {
       log.error("Test");
-      log.info("dio negro");
-      log.debug("palle");
+
+      RSA.generateKey();
    }
 }
