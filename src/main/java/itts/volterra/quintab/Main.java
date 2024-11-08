@@ -5,10 +5,14 @@ import org.apache.logging.log4j.Logger;
 
 import java.math.BigInteger;
 
+/**
+ * @author Negretto Enrico, Battiselli Giovanni
+ * @version 0.1.1
+ */
 public class Main {
    private static final Logger log = LogManager.getLogger(Main.class);
    private static RSA rsa = new RSA();
-   
+
    public static void main(String[] args) {
       String stringa = "test";
       log.info("Stringa originale: " + stringa);

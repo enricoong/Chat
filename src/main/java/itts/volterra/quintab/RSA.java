@@ -75,6 +75,12 @@ public class RSA {
       return encrypted.modPow(d, n);
    }
 
+   /**
+    * Decripta un BigInteger e lo converte in stringa
+    *
+    * @param encrypted BigInteger da decriptare
+    * @return Stringa decriptata
+    */
    public static String decryptToString(BigInteger encrypted) {
       return new String(encrypted.modPow(d, n).toByteArray());
    }
