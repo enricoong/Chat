@@ -50,6 +50,8 @@ public class RSA {
    public static BigInteger encrypt(String message){
       BigInteger messageBigInt = new BigInteger(message.getBytes());
       log.debug("Il 'messageBigInt' vale: {}", messageBigInt);
+      log.debug("'e' vale: {}", e);
+      log.debug("'n' vale: {}", n);
       return messageBigInt.modPow(e, n);
    }
 
@@ -71,5 +73,9 @@ public class RSA {
     */
    public static BigInteger decrypt(BigInteger encrypted) {
       return encrypted.modPow(d, n);
+   }
+
+   public static String decryptToString(BigInteger encrypted) {
+      return new String(encrypted.modPow(d, n).toByteArray());
    }
 }
