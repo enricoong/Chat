@@ -49,10 +49,8 @@ public class RSA {
     */
    public static BigInteger encrypt(String message){
       BigInteger messageBigInt = new BigInteger(message.getBytes());
-      log.debug("Il 'messageBigInt' vale: {}", messageBigInt);
-      log.debug("'e' vale: {}", e);
-      log.debug("'n' vale: {}", n);
-      return messageBigInt.modPow(e, n);
+      log.info("Encrypted string");
+      return messageBigInt.modPow(e, n);  //argomenti -> chiave pubblica
    }
 
    /**
@@ -62,7 +60,8 @@ public class RSA {
     * @return BigInteger criptato
     */
    public static BigInteger encrypt(BigInteger message){
-      return message.modPow(e, n);
+      log.info("Encrypted string");
+      return message.modPow(e, n);  //argomenti -> chiave pubblica
    }
 
    /**
@@ -72,7 +71,8 @@ public class RSA {
     * @return BigInteger decriptato
     */
    public static BigInteger decrypt(BigInteger encrypted) {
-      return encrypted.modPow(d, n);
+      log.info("Decrypted string");
+      return encrypted.modPow(d, n);   //argomenti -> chiave privata
    }
 
    /**
@@ -82,6 +82,7 @@ public class RSA {
     * @return Stringa decriptata
     */
    public static String decryptToString(BigInteger encrypted) {
-      return new String(encrypted.modPow(d, n).toByteArray());
+      log.info("Decrypted string");
+      return new String(encrypted.modPow(d, n).toByteArray()); //argomenti di modPow -> chiave privata
    }
 }
