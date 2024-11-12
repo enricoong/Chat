@@ -1,13 +1,14 @@
 # Chat Server
-This Java-based chat server project, developed by EnryX72 and Giovanni Battistelli, is designed as an annual assignment for Professor Giacchetti. The application provides a basic framework for a server-client chat system.
-
+This Java-based chat server project, developed by EnryX72 and Giovanni Battistelli, is designed as an annual assignment for Professor Giacchetti. 
+The application provides a basic framework for a server-client chat system.
+This projects aims at providing an encrypted connection among multiple clients and a server, which will interact with a database.
 ## Features
-Multi-client chat functionality
-Threaded server to manage multiple connections
-Basic message broadcasting to all connected clients
+- Multi-client chat functionality
+- Threaded server to manage multiple connections
+- Basic message broadcasting to all connected clients
 ## Requirements
-Java Development Kit (JDK) 8+
-Maven for dependency management
+- Java Development Kit (JDK) 8+
+- Maven for dependency management
 ## Setup and Usage
 Clone the repository:
 ```
@@ -24,5 +25,5 @@ java -jar target/Chat_Server.jar
 ```
 
 ## Project Structure
-src/: Contains the Java source code.
-pom.xml: Maven configuration file for dependencies and build.
+- src/: Contains the Java source code.
+- pom.xml: Maven configuration file for dependencies and build.
