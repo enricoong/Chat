@@ -7,7 +7,7 @@
     </Appenders>
 
     <Loggers>
-        <Root level="info"> <!-- cambia qui il livello dei log -->
+        <Root level="debug"> <!-- cambia qui il livello dei log -->
             <AppenderRef ref="console" />
         </Root>
     </Loggers>

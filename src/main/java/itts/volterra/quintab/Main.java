@@ -33,6 +33,7 @@ public class Main {
       String decrypted_string = rsa.decryptToString(stringaCriptata);
       if (!decrypted_string.equals(stringa)){   //stringa iniziale != stirnga finale
          //probabilmente numeri primi non sono primi, devo re-runnare il costruttore
+         log.warn("Errore durante la criptazione, nuovo tentativo...");
          rsa = new RSA();
       }
 
