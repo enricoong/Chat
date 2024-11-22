@@ -14,6 +14,7 @@ public class Main {
    private static RSA rsa = new RSA();
 
    public static void main(String[] args) {
+      //TODO: input e controllo numero prima (stringa_in = stringa_out)
       String stringa = "test";
       log.info("Stringa originale: " + stringa);
       BigInteger stringaCriptata = rsa.encrypt(stringa);
