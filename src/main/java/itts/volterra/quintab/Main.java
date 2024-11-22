@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.math.BigInteger;
+import java.util.Scanner;
 
 /**
  * @author Negretto Enrico, Battiselli Giovanni
@@ -14,11 +15,27 @@ public class Main {
    private static RSA rsa = new RSA();
 
    public static void main(String[] args) {
-      //TODO: input e controllo numero prima (stringa_in = stringa_out)
-      String stringa = "test";
+      //TODO: se stringa da criptare è troppo lunga, la separo in varie parti lunghe ognuna BIT_LENGHT
+      Scanner kbInput = new Scanner(System.in);
+
+      String stringa;   //dichiaro stringa di prendere in input
+      do {
+         System.out.print("Inserisci una stringa: ");
+         stringa = kbInput.nextLine().trim();   //prendo in input e trimmo
+      } while (stringa.isBlank());  //se la stringa è vuota o contiene solo spazi vuoti
+
+
       log.info("Stringa originale: " + stringa);
+
       BigInteger stringaCriptata = rsa.encrypt(stringa);
       log.info("Stringa criptata: " + stringaCriptata);
-      log.info("Stringa decriptata: " + rsa.decryptToString(stringaCriptata));
+
+      String decrypted_string = rsa.decryptToString(stringaCriptata);
+      if (!decrypted_string.equals(stringa)){   //stringa iniziale != stirnga finale
+         //probabilmente numeri primi non sono primi, devo re-runnare il costruttore
+         rsa = new RSA();
+      }
+
+      log.info("Stringa decriptata: " + decrypted_string);
    }
 }
