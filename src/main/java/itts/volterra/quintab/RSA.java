@@ -60,15 +60,45 @@ public class RSA {
     * @return BigInteger criptato
     */
    public static BigInteger encrypt(BigInteger message){
-      log.info("Encrypting string");
+      /*
+      Se io ho un messaggio lungo più di BIT_LENGHT bit, allora separo il big integer in pezzi lunghi al massimo
+      BIT_LENGHT caratteri, ma non per forza con quella lunghezza, esempio: se la lunghezza in bit massima fosse 5 e io
+      devo criptare un messaggio lungo 13 allora lo dividerebbe in 5+5+3, poi li cripta singolarmente e li rimette insieme
+       */
+
       if (message.bitLength() > BIT_LENGHT){
-         //il messaggio deve essere scomposto in più pezzi
-         List<BigInteger> splitResult = splitBigInteger(message, BIT_LENGHT);
-         for (int i = 0; i < splitResult.size(); i++) {
-            //splitResult.get(i) <--- singolo pezzo gia bigint
+         //separo in pezzi
+         int nPezzi = message.bitLength() / BIT_LENGHT;  //calcolo numero di pezzi interi
+         if (message.bitLength() % BIT_LENGHT != 0){     //se c'è il resto della divisione
+            nPezzi++;                                    //aggiungo una altro pezzo
          }
+
+         log.debug("Numero di pezzi in cui dividere il messaggio: {}/" + BIT_LENGHT + "={}", message.bitLength(), nPezzi);
+
+         StringBuilder messaggioCriptato = new StringBuilder();   //StringBuilder dove metterò i pezzi del messaggio criptato
+
+         //i = contatore bit | j = contatore
+         for (int i = 0, j = 0; j<=nPezzi; i += (BIT_LENGHT*16), j++) {
+            String block;
+            if (j == nPezzi){                                                 //se sono all'ultimo pezzo del messaggio
+               block = message.toString().substring(i, message.bitLength());  //il blocco va da 'i' alla fine del messaggio
+            } else {                                                          //altrimenti
+               block = message.toString().substring(i, i+(BIT_LENGHT*16));    //il blocco va da 'i' a 'i+BIT_LENGHT'
+            }
+
+            //ora devo criptare il singolo messaggio
+            BigInteger bloccoCriptato = encrypt(new BigInteger(block));
+            messaggioCriptato.append(bloccoCriptato);
+            log.debug("Aggiunto al messaggio criptato un blocco: {}", bloccoCriptato);
+         }
+
+         log.info("Encrypting string...");
+         return new BigInteger(messaggioCriptato.toString());
+      } else{
+         //ritorno stringa intera criptata
+         log.info("Encrypting string...");
+         return message.modPow(e, n);  //argomenti -> chiave pubblica
       }
-      return message.modPow(e, n);  //argomenti -> chiave pubblica
    }
 
    /**
@@ -92,20 +122,14 @@ public class RSA {
       return new String(decrypt(encrypted).toByteArray());
    }
 
-   public static List<BigInteger> splitBigInteger(BigInteger num, int chunkSize) {
-      List<BigInteger> chunks = new ArrayList<>(); //dichiaro ArrayList
-      String numToStr = num.toString();   //converto BigInteger a String
-
-      for (int i = 0; i < numToStr.length(); i += chunkSize) {
-         int end = i + chunkSize;   //assegno lunghezza chunk a tutto quello che mi resta
-         if (end > numToStr.length()) {   //se mi mancano più di BIT_LENGHT caratteri
-            end = numToStr.length();   //assegno lunghezza chunk a BIT_LENGHT
-         }
-
-         String chunk = numToStr.substring(i, end);   //seleziono porzione della stringa corrispondente
-         chunks.add(new BigInteger(chunk));  //aggiungo chunk alla List
-      }
-
-      return chunks;
-   }
+   /**
+    * Separa un BigInteger in pezzi di determinata lunghezza
+    *
+    * @param num BigInteger da separare
+    * @param chunkSize Dimensione del singolo blocco
+    * @return List di tutti i pezzi
+    */
+//   public static List<BigInteger> splitBigInteger(BigInteger num, int chunkSize) {
+//      //TODO
+//   }
 }

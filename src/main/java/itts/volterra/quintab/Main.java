@@ -27,14 +27,19 @@ public class Main {
 
       log.info("Stringa originale: " + stringa);
 
-      BigInteger stringaCriptata = rsa.encrypt(stringa);
+      BigInteger stringaCriptata = rsa.encrypt(new BigInteger(stringa.getBytes()));
       log.info("Stringa criptata: " + stringaCriptata);
 
       String decrypted_string = rsa.decryptToString(stringaCriptata);
-      if (!decrypted_string.equals(stringa)){   //stringa iniziale != stirnga finale
+      int nTentativi = 0;
+      while (!decrypted_string.equals(stringa) && nTentativi<10){   //stringa iniziale != stirnga finale
          //probabilmente numeri primi non sono primi, devo re-runnare il costruttore
          log.warn("Errore durante la criptazione, nuovo tentativo...");
          rsa = new RSA();
+         nTentativi++;
+      }
+      if (!(nTentativi < 10)){
+         log.error("Errore, troppi tentativi effettuati");
       }
 
       log.info("Stringa decriptata: " + decrypted_string);
