@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>itts.volterra.quintab</groupId>
-    <artifactId>Chat_Server</artifactId>
+    <artifactId>ChatClient</artifactId>
     <version>1.0-SNAPSHOT</version>
     <name>Progetto Negretto-Battistelli</name>
 
