@@ -78,12 +78,14 @@ public class RSA {
          StringBuilder messaggioCriptato = new StringBuilder();   //StringBuilder dove metterò i pezzi del messaggio criptato
 
          //i = contatore bit | j = contatore
-         for (int i = 0, j = 0; j<=nPezzi; i += (BIT_LENGHT*16), j++) {
+         for (int i = 0, j = 0; j<=nPezzi; i += (BIT_LENGHT/16), j++) {
+            log.debug("Ciclo: {}", j);
             String block;
             if (j == nPezzi){                                                 //se sono all'ultimo pezzo del messaggio
-               block = message.toString().substring(i, message.bitLength());  //il blocco va da 'i' alla fine del messaggio
+               // TODO il messaggio qui dovrebbe essere lungo meno di 1024, ma non funziona
+               block = message.toString().substring(i);                       //il blocco va da 'i' alla fine del messaggio
             } else {                                                          //altrimenti
-               block = message.toString().substring(i, i+(BIT_LENGHT*16));    //il blocco va da 'i' a 'i+BIT_LENGHT'
+               block = message.toString().substring(i, i+(BIT_LENGHT/16));    //il blocco va da 'i' a 'i+BIT_LENGHT'
             }
 
             //ora devo criptare il singolo messaggio
