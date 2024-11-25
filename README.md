@@ -7,6 +7,8 @@ This projects aims at providing an encrypted connection among multiple clients a
 - Multi-client chat functionality
 - Threaded server to manage multiple connections
 - Basic message broadcasting to all connected clients
+- Diffie-Hellman key exchange
+- RSA key generation algorithm
 ## Requirements
 - Java Development Kit (JDK) 8+
 - Maven for dependency management
