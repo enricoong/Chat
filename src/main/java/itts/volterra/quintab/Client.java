@@ -24,8 +24,10 @@ public class Client implements Runnable{
         log.debug("IP di questa macchina: {}", getIpOfCurrentMachine());
         log.warn("Inserisci IP della macchina a cui connettersi >");
         String userInsertedIP = kbInput.nextLine().trim();
+        log.info("Tentativo di connessione a {}...", userInsertedIP);
 
-        connectToClient(userInsertedIP, 12345);
+        connectToClient(userInsertedIP, 12345); //mi connetto al client
+
         runDiffieHellmanAlgorithm();
         //roba
     }

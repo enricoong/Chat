@@ -13,35 +13,37 @@ import java.util.Scanner;
 public class Main {
    private static final Logger log = LogManager.getLogger(Main.class);
    private static RSA rsa = new RSA();
+   private static final Scanner kbInput = new Scanner(System.in);
 
    public static void main(String[] args) {
       //TODO: se stringa da criptare è troppo lunga, la separo in varie parti lunghe ognuna BIT_LENGHT
-      Scanner kbInput = new Scanner(System.in);
 
-      String stringa;   //dichiaro stringa di prendere in input
-      do {
-         System.out.print("Inserisci una stringa: ");
-         stringa = kbInput.nextLine().trim();   //prendo in input e trimmo
-      } while (stringa.isBlank());  //se la stringa è vuota o contiene solo spazi vuoti
+//      String stringa;   //dichiaro stringa di prendere in ingresso
+//      do {
+//         System.out.print("Inserisci una stringa: ");
+//         stringa = kbInput.nextLine().trim();   //prendo in ingresso e trimmo
+//      } while (stringa.isBlank());  //se la stringa è vuota o contiene solo spazi vuoti
+//
+//
+//      log.info("Stringa originale: " + stringa);
+//
+//      BigInteger stringaCriptata = rsa.encrypt(new BigInteger(stringa.getBytes()));
+//      log.info("Stringa criptata: " + stringaCriptata);
+//
+//      String decrypted_string = rsa.decryptToString(stringaCriptata);
+//      int nTentativi = 0;
+//      while (!decrypted_string.equals(stringa) && nTentativi<10){   //stringa iniziale != stirnga finale
+//         //probabilmente numeri primi non sono primi, devo re-runnare il costruttore
+//         log.warn("Errore durante la criptazione, nuovo tentativo...");
+//         rsa = new RSA();
+//         nTentativi++;
+//      }
+//      if (!(nTentativi < 10)){
+//         log.error("Errore, troppi tentativi effettuati");
+//      }
+//
+//      log.info("Stringa decriptata: " + decrypted_string);
 
-
-      log.info("Stringa originale: " + stringa);
-
-      BigInteger stringaCriptata = rsa.encrypt(new BigInteger(stringa.getBytes()));
-      log.info("Stringa criptata: " + stringaCriptata);
-
-      String decrypted_string = rsa.decryptToString(stringaCriptata);
-      int nTentativi = 0;
-      while (!decrypted_string.equals(stringa) && nTentativi<10){   //stringa iniziale != stirnga finale
-         //probabilmente numeri primi non sono primi, devo re-runnare il costruttore
-         log.warn("Errore durante la criptazione, nuovo tentativo...");
-         rsa = new RSA();
-         nTentativi++;
-      }
-      if (!(nTentativi < 10)){
-         log.error("Errore, troppi tentativi effettuati");
-      }
-
-      log.info("Stringa decriptata: " + decrypted_string);
+      new Thread(new Client()).start();
    }
 }
