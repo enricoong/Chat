@@ -1,4 +1,5 @@
-# Chat Server
+# Chat Project
+[Client side]
 This Java-based chat server project, developed by EnryX72 and Giovanni Battistelli, is designed as an annual assignment for Professor Giachetto. 
 The application provides a basic framework for a server-client chat system.
 This projects aims at providing an encrypted connection among multiple clients and a server, which will interact with a database.
