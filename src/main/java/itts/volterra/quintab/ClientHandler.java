@@ -18,11 +18,13 @@ public class ClientHandler implements Runnable{
         try {
             BufferedReader bR = new BufferedReader(new InputStreamReader(socket.getInputStream()));    //input stream
 
-            String msg = bR.readLine();
-
-            handleMessage(msg);
+            String msg;
+            do {
+                msg = bR.readLine();            //leggo messaggio da client
+            } while (handleMessage(msg) != 1);  //gestisco msg, se errore esco e chiudo connessione
 
             bR.close();
+            socket.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -36,17 +38,22 @@ public class ClientHandler implements Runnable{
      * Gestisco il messaggio
      *
      * @param message Messaggio
+     * @return Stato (0 - Errore / 1 - OK)
      */
-    private void handleMessage(String message){
+    private int handleMessage(String message){
         switch (message.substring(0, 3)){
             case "P--" -> {
                 setP(new BigInteger(message.substring(3).getBytes()));
+                return 1;
             }
 
             case "G--" -> {
-                setG(new BigInteger(message.substring(3).getBytes()));
+               setG(new BigInteger(message.substring(3).getBytes()));
+                return 1;
             }
         }
+
+        return 0;   //error
     }
 
     public static void setP(BigInteger p) {

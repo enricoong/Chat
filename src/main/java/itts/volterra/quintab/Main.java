@@ -3,6 +3,7 @@ package itts.volterra.quintab;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Scanner;
 
@@ -43,6 +44,12 @@ public class Main {
 //
 //      log.info("Stringa decriptata: " + decrypted_string);
 
-      new Thread(new Client()).start();
+      try {
+         new Thread(new Server()).start();            //avvio server
+      } catch (IOException e) {                       //se lancia eccezione
+         log.error("Che palle (RuntimeException)");   //log
+         throw new RuntimeException(e);               //lancio eccezione anch'io perché non mi pagano per far sta roba
+      }
+      new Thread(new Client()).start();               //avvio client
    }
 }

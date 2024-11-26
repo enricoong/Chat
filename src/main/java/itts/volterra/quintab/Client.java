@@ -22,12 +22,25 @@ public class Client implements Runnable{
 
     @Override
     public void run() {
-        log.debug("IP di questa macchina: {}", getIpOfCurrentMachine());
-        log.warn("Inserisci IP della macchina a cui connettersi >");
-        String userInsertedIP = kbInput.nextLine().trim();
-        log.info("Tentativo di connessione a {}...", userInsertedIP);
+        int connecitonResult;
+        boolean stop = false;
 
-        connectToClient(userInsertedIP, 12345); //mi connetto al client
+        do {
+            System.out.print("Inserisci IP della macchina a cui connettersi ['X' per annullare] >");
+            String userInsertedIP = kbInput.nextLine().trim();  //acquisisco input
+
+            if (userInsertedIP.equals("X")){                                            //se utente ha scritto X
+                stop = true;                                                            //dichiaro stop = true
+            } else {                                                                    //altrimenti proseguo normalmente
+                log.info("Tentativo di connessione a {}...", userInsertedIP);
+            }
+
+            connecitonResult = connectToServer(userInsertedIP, 12345);              //mi connetto al client
+        } while (connecitonResult == 1 && !stop);    //se ritorna codice 1 allora errore e ritento connessione, oppure esco se utente ha deciso di uscire
+
+        if (stop){
+            Thread.currentThread().interrupt();     //ferma il Thread attuale
+        }
 
         rsa = new RSA();    //costruisco RSA
 
@@ -40,52 +53,49 @@ public class Client implements Runnable{
      *
      * @param machineIP IP macchina
      * @param port Porta di connessione
+     * @return Codice stato (0 - Errore / 1 - OK)
      */
-    private static void connectToClient(String machineIP, int port){
-        while (true){   //ciclo di ascolto
-            try {
-                log.info("In attesa di connessione...");                //log attesa di connessione
-                Socket otherClient = new ServerSocket(port).accept();   //attendo richiesta di connessione, bloccante //TODO ERRORE QUI
-                log.info("Client connesso!");                           //log connessione del client
+    private static int connectToServer(String machineIP, int port){
+        Socket otherClient;
 
-                BufferedReader bR = new BufferedReader(new InputStreamReader(otherClient.getInputStream()));    //input stream
-                {
-                    boolean stop = false;
-                    while (!stop){  //fermo il ciclo solo in caso di richiesta dall'altro client
-                        String otherClientMessage = bR.readLine();      //ricevo e salvo messaggio da altro client
-                        log.debug("Messaggio ricevuto: {}", otherClientMessage);    //log ricezione
+        try {
+            otherClient = new Socket(machineIP, port);   //tento connessione a server
+        } catch (UnknownHostException unknownHostException){
+            log.warn("Il server non esiste");                   //log errore server inesistente
+            return 0;                                           //errore
+        } catch (IOException ioException){
+            log.warn("Errore I/O durante la connessione");      //log errore connessione
+            return 0;                                           //errore
+        }
+        log.info("Connesso al server!");                        //log connessione del client
 
-                        if (otherClientMessage.equals("END_CONNECTION")){   //altro client richiede terminazione connessione
-                            stop = true;
-                        } else {
-                            manageMessage(otherClientMessage, otherClient); //gestisco messaggio
-                        }
-                    }
+        BufferedReader bR;
+        try {
+            bR = new BufferedReader(new InputStreamReader(otherClient.getInputStream()));    //input stream
+        } catch (IOException ioException){
+            log.warn("Errore durante la creazione dell'input stream");
+            return 0;
+        }
+
+        {
+            boolean stop = false;
+            while (!stop){  //fermo il ciclo solo in caso di richiesta dall'altro client
+                String otherClientMessage;
+
+                try {
+                    otherClientMessage = bR.readLine();      //ricevo e salvo messaggio da altro client
+                } catch (IOException ioException){
+                    log.warn("Errore durante la lettura dell'input stream");
+                    return 0;
                 }
-0
-                bR.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                log.debug("Messaggio ricevuto: {}", otherClientMessage);    //log ricezione
+
+                if (otherClientMessage.equals("END_CONNECTION")){   //altro client richiede terminazione connessione
+                    stop = true;
+                }
             }
         }
-    }
-
-    /**
-     * Gestisce un messaggio ricevuto da un Socket
-     *
-     * @param message Messagio
-     * @param socket Socket
-     */
-    private static void manageMessage(String message, Socket socket){
-        switch (message.substring(0, 3)){
-            case "P--" -> {
-                setP(new BigInteger(message.substring(3).getBytes()));
-            }
-
-            case "G--" -> {
-                setG(new BigInteger(message.substring(3).getBytes()));
-            }
-        }
+        return 1;   //OK
     }
 
     /**
@@ -101,20 +111,6 @@ public class Client implements Runnable{
         pW.close();                 //chiudo stream
     }
 
-    /**
-     * Mi dice l'IP della macchina attuale
-     *
-     * @return IP della macchina attuale
-     */
-    private String getIpOfCurrentMachine() {
-        try (final DatagramSocket datagramSocket = new DatagramSocket()){
-            datagramSocket.connect(InetAddress.getByName("1.1.1.1"), 12345);
-            return datagramSocket.getLocalAddress().getHostAddress();
-        } catch (Exception e){
-            e.printStackTrace();
-        }
-        return null;    //non dovrebbe arrivare qui ma ora non ho tempo per gestire bene le eccezioni
-    }
 
     /**
      * Metodo che richiama tutti i sotto-metodi che eseguono l'algoritmo di Diffie-Hellman
