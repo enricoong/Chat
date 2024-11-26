@@ -45,7 +45,7 @@ public class Client implements Runnable{
         while (true){   //ciclo di ascolto
             try {
                 log.info("In attesa di connessione...");                //log attesa di connessione
-                Socket otherClient = new Socket(machineIP, port);       //attendo richiesta di connessione, bloccante //TODO ERRORE QUI
+                Socket otherClient = new ServerSocket(port).accept();   //attendo richiesta di connessione, bloccante //TODO ERRORE QUI
                 log.info("Client connesso!");                           //log connessione del client
 
                 BufferedReader bR = new BufferedReader(new InputStreamReader(otherClient.getInputStream()));    //input stream
@@ -62,7 +62,7 @@ public class Client implements Runnable{
                         }
                     }
                 }
-
+0
                 bR.close();
             } catch (IOException e) {
                 throw new RuntimeException(e);
