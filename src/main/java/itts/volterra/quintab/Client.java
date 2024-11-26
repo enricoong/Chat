@@ -13,6 +13,7 @@ import java.util.Scanner;
 
 public class Client implements Runnable{
 
+    private static RSA rsa;
     private static final Logger log = LogManager.getLogger(Client.class);
     private static BigInteger privateKey;   //chiave privata di questo client
     private BigInteger ky;                  //chiave da scambiare al pubblico
@@ -28,7 +29,9 @@ public class Client implements Runnable{
 
         connectToClient(userInsertedIP, 12345); //mi connetto al client
 
-        runDiffieHellmanAlgorithm();
+        rsa = new RSA();    //costruisco RSA
+
+        runDiffieHellmanAlgorithm();    //algoritmo Diffie-Hellman
         //roba
     }
 
@@ -42,7 +45,7 @@ public class Client implements Runnable{
         while (true){   //ciclo di ascolto
             try {
                 log.info("In attesa di connessione...");                //log attesa di connessione
-                Socket otherClient = new ServerSocket(port).accept();   //attendo richiesta di connessione, bloccante
+                Socket otherClient = new Socket(machineIP, port);       //attendo richiesta di connessione, bloccante //TODO ERRORE QUI
                 log.info("Client connesso!");                           //log connessione del client
 
                 BufferedReader bR = new BufferedReader(new InputStreamReader(otherClient.getInputStream()));    //input stream

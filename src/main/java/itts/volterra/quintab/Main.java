@@ -12,7 +12,6 @@ import java.util.Scanner;
  */
 public class Main {
    private static final Logger log = LogManager.getLogger(Main.class);
-   private static RSA rsa = new RSA();
    private static final Scanner kbInput = new Scanner(System.in);
 
    public static void main(String[] args) {
