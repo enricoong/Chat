@@ -29,35 +29,35 @@ public class Client implements Runnable{
           log.warn("Il Thread è stato interrotto durante lo sleep");
        }
 
-       int connecitonResult;
+       int connecitonResult = 0;
         boolean stop = false;
 
         do {
             System.out.print("[CLIENT] Inserisci IP della macchina a cui connettersi ['X' per annullare] >");
             String userInsertedIP = kbInput.nextLine().trim();  //acquisisco input
 
-            if (userInsertedIP.equals("X")){                                            //se utente ha scritto X
+            if (userInsertedIP.equalsIgnoreCase("X")){                                            //se utente ha scritto X
+                log.debug("L'utente ha scelto di annullare");
                 stop = true;                                                            //dichiaro stop = true
             } else {                                                                    //altrimenti proseguo normalmente
                 log.info("Tentativo di connessione a {}...", userInsertedIP);
+                connecitonResult = connectToServer(userInsertedIP, 12345);              //mi connetto al client
             }
-
-            connecitonResult = connectToServer(userInsertedIP, 12345);              //mi connetto al client
         } while (connecitonResult == 0 && !stop);    //se ritorna codice 0 allora errore e ritento connessione, oppure esco se utente ha deciso di uscire
-
-        //listenForServerMessage();
-
-        log.debug("Sto per inviare il messaggio...");
-        sendMessageToSocket(socket, "TEST");
 
         if (stop){
             Thread.currentThread().interrupt();     //ferma il Thread attuale
+        } else {
+            //listenForServerMessage();
+
+            log.debug("Sto per inviare il messaggio...");
+            sendMessageToSocket(socket, "TEST");
+
+            rsa = new RSA();    //costruisco RSA
+
+            runDiffieHellmanAlgorithm();    //algoritmo Diffie-Hellman
+            //roba
         }
-
-        rsa = new RSA();    //costruisco RSA
-
-        runDiffieHellmanAlgorithm();    //algoritmo Diffie-Hellman
-        //roba
     }
 
     /**
