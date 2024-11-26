@@ -18,6 +18,8 @@ public class ClientHandler implements Runnable{
         try {
             BufferedReader bR = new BufferedReader(new InputStreamReader(socket.getInputStream()));    //input stream
 
+            //TODO ERRORE QUI - il msg è null
+
             String msg;
             do {
                 msg = bR.readLine();            //leggo messaggio da client

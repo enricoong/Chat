@@ -19,14 +19,21 @@ public class Client implements Runnable{
     private BigInteger ky;                  //chiave da scambiare al pubblico
     private static BigInteger G, P;                // numeri primi
     private Scanner kbInput = new Scanner(System.in);
+    private Socket socket;
 
     @Override
     public void run() {
-        int connecitonResult;
+       try {
+          Thread.sleep(500);    //sleep perché il messaggio in console appaia senza essere in mezzo ad altre righe
+       } catch (InterruptedException e) {
+          log.warn("Il Thread è stato interrotto durante lo sleep");
+       }
+
+       int connecitonResult;
         boolean stop = false;
 
         do {
-            System.out.print("Inserisci IP della macchina a cui connettersi ['X' per annullare] >");
+            System.out.print("[CLIENT] Inserisci IP della macchina a cui connettersi ['X' per annullare] >");
             String userInsertedIP = kbInput.nextLine().trim();  //acquisisco input
 
             if (userInsertedIP.equals("X")){                                            //se utente ha scritto X
@@ -36,7 +43,12 @@ public class Client implements Runnable{
             }
 
             connecitonResult = connectToServer(userInsertedIP, 12345);              //mi connetto al client
-        } while (connecitonResult == 1 && !stop);    //se ritorna codice 1 allora errore e ritento connessione, oppure esco se utente ha deciso di uscire
+        } while (connecitonResult == 0 && !stop);    //se ritorna codice 0 allora errore e ritento connessione, oppure esco se utente ha deciso di uscire
+
+        //listenForServerMessage();
+
+        log.debug("Sto per inviare il messaggio...");
+        sendMessageToSocket(socket, "TEST");
 
         if (stop){
             Thread.currentThread().interrupt();     //ferma il Thread attuale
@@ -53,13 +65,11 @@ public class Client implements Runnable{
      *
      * @param machineIP IP macchina
      * @param port Porta di connessione
-     * @return Codice stato (0 - Errore / 1 - OK)
+     * @return Codice di stato (0 - Errore / 1 - OK)
      */
-    private static int connectToServer(String machineIP, int port){
-        Socket otherClient;
-
+    private int connectToServer(String machineIP, int port){
         try {
-            otherClient = new Socket(machineIP, port);   //tento connessione a server
+            socket = new Socket(machineIP, port);          //tento connessione a server
         } catch (UnknownHostException unknownHostException){
             log.warn("Il server non esiste");                   //log errore server inesistente
             return 0;                                           //errore
@@ -69,48 +79,72 @@ public class Client implements Runnable{
         }
         log.info("Connesso al server!");                        //log connessione del client
 
-        BufferedReader bR;
-        try {
-            bR = new BufferedReader(new InputStreamReader(otherClient.getInputStream()));    //input stream
-        } catch (IOException ioException){
-            log.warn("Errore durante la creazione dell'input stream");
-            return 0;
-        }
-
-        {
-            boolean stop = false;
-            while (!stop){  //fermo il ciclo solo in caso di richiesta dall'altro client
-                String otherClientMessage;
-
-                try {
-                    otherClientMessage = bR.readLine();      //ricevo e salvo messaggio da altro client
-                } catch (IOException ioException){
-                    log.warn("Errore durante la lettura dell'input stream");
-                    return 0;
-                }
-                log.debug("Messaggio ricevuto: {}", otherClientMessage);    //log ricezione
-
-                if (otherClientMessage.equals("END_CONNECTION")){   //altro client richiede terminazione connessione
-                    stop = true;
-                }
-            }
-        }
         return 1;   //OK
     }
 
     /**
      * Scrive nell'output stream di un Socket
      *
-     * @param client Socket
+     * @param socket Socket
      * @param message Messaggio da scrivere
      * @throws IOException Cagati addosso
      */
-    private void sendMessageToSocket(Socket client, String message) throws IOException {
-        PrintWriter pW = new PrintWriter(client.getOutputStream(), true);  //writer per scrivere
-        pW.println(message);        //invio conferma ricezione
-        pW.close();                 //chiudo stream
+    private void sendMessageToSocket(Socket socket, String message) {
+        PrintWriter pW = null;                                                     //writer per scrivere
+        boolean initialized = false;
+
+        while (!initialized) {
+            try {
+                pW = new PrintWriter(socket.getOutputStream(), true);
+                initialized = true;
+            } catch (IOException e) {
+                log.warn("Errore durante la creazione dell'output stream al server");
+            }
+        }
+
+        pW.println(message);                                                //invio conferma ricezione
+        pW.close();                                                         //chiudo stream
     }
 
+    /**
+     * Listener di messaggi dal server, quando riceve 'END_CONNECTION' termina di ascoltare
+     *
+     * @return Codice di stato (0 - Errore / 1 - OK)
+     */
+    private int listenForServerMessage(){
+        BufferedReader bR;
+        try {
+            bR = new BufferedReader(new InputStreamReader(socket.getInputStream()));    //input stream
+        } catch (IOException ioException){
+            log.warn("Errore durante la creazione dell'input stream");
+            return 0;                                       //fermo tentativo ascolto
+        }
+
+        boolean stop = false;
+        while (!stop){                                      //fermo il ciclo solo in caso di richiesta dall'altro client
+            String otherClientMessage;
+
+            try {
+                otherClientMessage = bR.readLine();         //ricevo e salvo messaggio da altro client
+            } catch (IOException ioException){
+                log.warn("Errore durante la lettura dell'input stream");
+                return 0;                                   //fermo tentativo ascolto
+            }
+
+            log.debug("Messaggio ricevuto: {}", otherClientMessage);    //log ricezione
+
+            if (otherClientMessage.equals("END_CONNECTION")){   //altro client richiede terminazione connessione
+                stop = true;                                    //esco dal ciclo
+            }
+        }
+
+       try {
+          bR.close();
+       } catch (IOException e) {
+          log.warn("Errore durante la chiusura dell'input stream");
+       }
+       return 1;
+    }
 
     /**
      * Metodo che richiama tutti i sotto-metodi che eseguono l'algoritmo di Diffie-Hellman
