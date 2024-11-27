@@ -54,15 +54,29 @@ public class ClientHandler implements Runnable{
      * @return Stato (0 - Errore / 1 - OK)
      */
     private int handleMessage(String message){
-        switch (message.substring(0, 3)){
-            case "P--" -> {
-                setP(new BigInteger(message.substring(3).getBytes()));
-                return 1;
-            }
+        log.debug("Messaggio ricevuto: {}", message);
 
-            case "G--" -> {
-               setG(new BigInteger(message.substring(3).getBytes()));
-                return 1;
+        if (message == null){
+            //ricevuto null, ignoro
+            log.debug("Messaggio ignorato perché 'null'");
+            return 1;
+        } else {    //se il messaggio non è null
+            String msgSubstringAfter3 = message.substring(3);   //Contenuto del messaggio dopo le prime 3 cifre
+
+            switch (message.substring(0, 3)){
+                case "P--" -> {
+                    setP(new BigInteger(msgSubstringAfter3.getBytes()));
+                    return 1;
+                }
+
+                case "G--" -> {
+                    setG(new BigInteger(msgSubstringAfter3.getBytes()));
+                    return 1;
+                }
+
+                case "TES" ->{
+                    log.debug("DAJE ROMA DAJEEEE");
+                }
             }
         }
 

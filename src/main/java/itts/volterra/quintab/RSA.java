@@ -25,18 +25,18 @@ public class RSA {
 
       //n = p * q
       n = p.multiply(q);
-      log.debug("Generated 'n' number");
+      log.debug("Generated 'n' number (P*Q)");
 
       //(p-1)*(q-1)
       BigInteger phi = (p.subtract(BigInteger.ONE)).multiply(q.subtract(BigInteger.ONE));
-      log.debug("Generated 'phi'");
+      log.debug("Generated 'phi' ((P-1) * (Q-1))");
 
       //condizioni: 1 < e < phi(n) e gcd(e, phi(n)) = 1
       e = BigInteger.probablePrime(BIT_LENGHT, random);
       while (phi.gcd(e).compareTo(BigInteger.ONE) > 0 && e.compareTo(phi) < 0) {
          e = e.add(BigInteger.ONE);
       }
-      log.debug("Generated 'e'");
+      log.debug("Generated 'e' number");
 
       //inverso moltiplicativo di e mod(phi(n))
       d = e.modInverse(phi);

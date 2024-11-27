@@ -33,7 +33,7 @@ public class Client implements Runnable{
         boolean stop = false;
 
         do {
-            System.out.print("[CLIENT] Inserisci IP della macchina a cui connettersi ['X' per annullare] >");
+            System.out.print("[CLIENT] Inserisci IP della macchina a cui connettersi ['X' per annullare] > ");
             String userInsertedIP = kbInput.nextLine().trim();  //acquisisco input
 
             if (userInsertedIP.equalsIgnoreCase("X")){                                            //se utente ha scritto X
