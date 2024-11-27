@@ -27,8 +27,6 @@ public class ClientHandler implements Runnable{
                 log.debug("Lettura dell'input stream dal Client in corso...");
                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));    //input stream
 
-                //TODO ERRORE QUI - il msg è null
-
                 String msg;
                 do {
                     msg = in.readLine();            //leggo messaggio da client
