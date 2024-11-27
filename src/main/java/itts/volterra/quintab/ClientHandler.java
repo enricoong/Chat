@@ -13,30 +13,37 @@ import java.net.Socket;
  * Gestisce le connessioni in arrivo
  */
 public class ClientHandler implements Runnable{
+    public static boolean isObjectCreated;
     private static final Logger log = LogManager.getLogger(ClientHandler.class);
     private Socket socket;
     private static BigInteger G, P; // numeri primi
 
     @Override
     public void run() {
-        try {
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));    //input stream
+        if (!isObjectCreated){      //se il costruttore non è stato eseguito
+            log.warn("L’oggetto ClientHandler non è stato costruito con successo");
+        } else {
+            try {
+                log.debug("Lettura dell'input stream dal Client in corso...");
+                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));    //input stream
 
-            //TODO ERRORE QUI - il msg è null
+                //TODO ERRORE QUI - il msg è null
 
-            String msg;
-            do {
-                msg = in.readLine();            //leggo messaggio da client
-            } while (handleMessage(msg) != 1);  //gestisco msg, se errore esco e chiudo connessione
+                String msg;
+                do {
+                    msg = in.readLine();            //leggo messaggio da client
+                } while (handleMessage(msg) != 1);  //gestisco msg, se errore esco e chiudo connessione
 
-            in.close();
-            socket.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+                in.close();
+                socket.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
     public ClientHandler(Socket client) {
+        isObjectCreated = true;
         this.socket = client;
     }
 
