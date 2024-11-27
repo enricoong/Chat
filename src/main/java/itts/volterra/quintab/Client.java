@@ -50,13 +50,11 @@ public class Client implements Runnable{
         } else {
             //listenForServerMessage();
 
-            log.debug("Sto per inviare il messaggio...");
-            sendMessageToSocket(socket, "TEST");
-
+            //Da qui comincio con DiffieHellman e RSA
             rsa = new RSA();    //costruisco RSA
-
             runDiffieHellmanAlgorithm();    //algoritmo Diffie-Hellman
-            //roba
+
+            //sendMessageToSocket(socket, "TEST");
         }
     }
 
@@ -109,33 +107,31 @@ public class Client implements Runnable{
     /**
      * Listener di messaggi dal server, quando riceve 'END_CONNECTION' termina di ascoltare
      *
-     * @return Codice di stato (0 - Errore / 1 - OK)
+     * @return Codice di stato (0 - Errore / 1 - OK / 2 - TERM_LISTEN)
      */
-    private int listenForServerMessage(){
+    private String listenForServerMessage(){
         BufferedReader bR;
         try {
             bR = new BufferedReader(new InputStreamReader(socket.getInputStream()));    //input stream
-        } catch (IOException ioException){
+        } catch (IOException ioException){  //TODO PERCHé IBE BASTARDO IL SOCKET QUI è CHIUSO MANNAGGIA ALLE PERSONE CON TANTI PELI SULLO SCROTO
             log.warn("Errore durante la creazione dell'input stream");
-            return 0;                                       //fermo tentativo ascolto
+            return "0";                                       //fermo tentativo ascolto
         }
 
         boolean stop = false;
         while (!stop){                                      //fermo il ciclo solo in caso di richiesta dall'altro client
-            String otherClientMessage;
+            String message;
 
             try {
-                otherClientMessage = bR.readLine();         //ricevo e salvo messaggio da altro client
+                message = bR.readLine();         //ricevo e salvo messaggio da altro client
             } catch (IOException ioException){
                 log.warn("Errore durante la lettura dell'input stream");
-                return 0;                                   //fermo tentativo ascolto
+                return "0";                                   //fermo tentativo ascolto
             }
 
-            log.debug("Messaggio ricevuto: {}", otherClientMessage);    //log ricezione
+            log.debug("Messaggio ricevuto: {}", message);    //log ricezione
 
-            if (otherClientMessage.equals("END_CONNECTION")){   //altro client richiede terminazione connessione
-                stop = true;                                    //esco dal ciclo
-            }
+            return message;
         }
 
        try {
@@ -143,18 +139,31 @@ public class Client implements Runnable{
        } catch (IOException e) {
           log.warn("Errore durante la chiusura dell'input stream");
        }
-       return 1;
+       return "2";
     }
 
     /**
      * Metodo che richiama tutti i sotto-metodi che eseguono l'algoritmo di Diffie-Hellman
      */
-    private static void runDiffieHellmanAlgorithm(){
-        //get from server G and P
+    private void runDiffieHellmanAlgorithm(){
+        sendMessageToSocket(socket, "DH-START");    //inizia Diffie-Hellman
+
+        String listenCode;
+        do {
+            listenCode = listenForServerMessage();
+        } while (listenCode == "1");  //ascolta finché non termina o crasha
+
+        /*
+            case "P--" ->{
+                    log.debug("Imposto nuovo valore di P...");
+                    setP(new BigInteger(message.substring(3).getBytes()));
+                    log.debug("Nuovo valore di P impostato");
+                }
+         */
 
         BigInteger anotherKey = generateIntermediateKey(G, privateKey, P);     //genera chiave x
 
-        //now send key to other client
+        //now send key to other server
     }
 
     /**

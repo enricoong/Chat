@@ -6,7 +6,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.math.BigInteger;
+import java.io.PrintWriter;
 import java.net.Socket;
 
 /**
@@ -16,7 +16,6 @@ public class ClientHandler implements Runnable{
     public static boolean isObjectCreated;
     private static final Logger log = LogManager.getLogger(ClientHandler.class);
     private Socket socket;
-    private static BigInteger G, P; // numeri primi
 
     @Override
     public void run() {
@@ -30,7 +29,7 @@ public class ClientHandler implements Runnable{
                 String msg;
                 do {
                     msg = in.readLine();            //leggo messaggio da client
-                } while (handleMessage(msg) != 1);  //gestisco msg, se errore esco e chiudo connessione
+                } while (handleMessage(msg, socket) != 1);  //gestisco msg, se errore esco e chiudo connessione
 
                 in.close();
                 socket.close();
@@ -49,9 +48,10 @@ public class ClientHandler implements Runnable{
      * Gestisco il messaggio
      *
      * @param message Messaggio
+     * @param socket Socket mittente
      * @return Stato (0 - Errore / 1 - OK)
      */
-    private int handleMessage(String message){
+    private int handleMessage(String message, Socket socket){
         log.debug("Messaggio ricevuto: {}", message);
 
         if (message == null){
@@ -62,18 +62,9 @@ public class ClientHandler implements Runnable{
             String msgSubstringAfter3 = message.substring(3);   //Contenuto del messaggio dopo le prime 3 cifre
 
             switch (message.substring(0, 3)){
-                case "P--" -> {
-                    setP(new BigInteger(msgSubstringAfter3.getBytes()));
+                case "DH-" -> {
+                    manageDiffieHellman(msgSubstringAfter3, socket);    //l'utente sta tentando di eseguire operazioni riguardanti DH
                     return 1;
-                }
-
-                case "G--" -> {
-                    setG(new BigInteger(msgSubstringAfter3.getBytes()));
-                    return 1;
-                }
-
-                case "TES" ->{
-                    log.debug("DAJE ROMA DAJEEEE");
                 }
             }
         }
@@ -81,11 +72,47 @@ public class ClientHandler implements Runnable{
         return 0;   //error
     }
 
-    public static void setP(BigInteger p) {
-        P = p;
+    /**
+     * Se l'utente deve eseguire operazioni riguardanti DH, questo metodo viene eseguito, gestendo la richiesta utente
+     *
+     * @param messageContent Messaggio dell'utente (esclusa la prima parte "DH-")
+     */
+    private void manageDiffieHellman(String messageContent, Socket socket){
+        switch (messageContent.substring(0, 5)){
+            case "START" ->{        //l'utente vuole iniziare il protocollo
+                sendMessageToSocket(socket, "P--" + 1234); //invio valore di P al client
+                //TODO
+            }
+
+            case "STOP-" ->{
+                sendMessageToSocket(socket, "STOP");
+            }
+
+            //TODO
+        }
     }
 
-    public static void setG(BigInteger g) {
-        G = g;
+    /**
+     * Scrive nell'output stream di un Socket
+     *
+     * @param socket Socket
+     * @param message Messaggio da scrivere
+     * @throws IOException Cagati addosso
+     */
+    private void sendMessageToSocket(Socket socket, String message) {
+        PrintWriter pW = null;                                                     //writer per scrivere
+        boolean initialized = false;
+
+        while (!initialized) {
+            try {
+                pW = new PrintWriter(socket.getOutputStream(), true);
+                initialized = true;
+            } catch (IOException e) {
+                log.warn("Errore durante la creazione dell'output stream");
+            }
+        }
+
+        pW.println(message);                                                //invio conferma ricezione
+        pW.close();                                                         //chiudo stream
     }
 }
