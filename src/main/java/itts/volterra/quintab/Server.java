@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -16,6 +17,10 @@ public class Server implements Runnable {
     private static final Logger log = LogManager.getLogger(Server.class);
     private static final int PORT =  12345;
     private ServerSocket srvSocket;
+
+    //variabili per DH
+    private static final BigInteger DEFAULT_P = new BigInteger("23");  //P
+    private static final BigInteger DEFAULT_G = new BigInteger("5");   //G
 
     public Server() throws IOException {
         srvSocket = new ServerSocket(PORT);
@@ -34,7 +39,7 @@ public class Server implements Runnable {
                 ClientHandler clientHandler = new ClientHandler(otherClient);   //Passo il Socket
                 new Thread(clientHandler).start();                              //Avvio il Thread
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                log.error("Errore durante l'accettazione della connessione", e);
             }
         }
     }

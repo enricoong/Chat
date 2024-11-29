@@ -7,7 +7,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.net.Socket;
+import java.security.SecureRandom;
 
 /**
  * Gestisce le connessioni in arrivo
@@ -16,6 +18,11 @@ public class ClientHandler implements Runnable{
     public static boolean isObjectCreated;
     private static final Logger log = LogManager.getLogger(ClientHandler.class);
     private Socket socket;
+    private BufferedReader in;
+    private PrintWriter out;
+    private BigInteger serverPrivateKey;
+    private BigInteger serverPublicKey;
+    private RSA rsa;
 
     @Override
     public void run() {
@@ -40,8 +47,22 @@ public class ClientHandler implements Runnable{
     }
 
     public ClientHandler(Socket client) {
-        isObjectCreated = true;
         this.socket = client;
+        try {
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new PrintWriter(socket.getOutputStream(), true);
+
+            rsa = new RSA();
+
+            //genera chiave privata del server
+            serverPrivateKey = generatePrivateKey();
+        } catch (IOException e) {
+            log.error("Errore durante l'inizializzazione del gestore client", e);
+        }
+    }
+
+    private BigInteger generatePrivateKey() {
+        return new BigInteger(1024, new SecureRandom());
     }
 
     /**
