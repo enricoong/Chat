@@ -9,17 +9,23 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.net.*;
+import java.security.SecureRandom;
 import java.util.Scanner;
 
 public class Client implements Runnable{
 
     private static RSA rsa;
     private static final Logger log = LogManager.getLogger(Client.class);
-    private static BigInteger privateKey;   //chiave privata di questo client
-    private BigInteger ky;                  //chiave da scambiare al pubblico
-    private static BigInteger G, P;                // numeri primi
+    private BufferedReader in;
+    private PrintWriter out;
     private Scanner kbInput = new Scanner(System.in);
     private Socket socket;
+
+    //parametri Diffie-Hellman
+    private BigInteger P, G;
+    private BigInteger clientPrivateKey;
+    private BigInteger clientPublicKey;
+
 
     @Override
     public void run() {
@@ -45,16 +51,15 @@ public class Client implements Runnable{
             }
         } while (connecitonResult == 0 && !stop);    //se ritorna codice 0 allora errore e ritento connessione, oppure esco se utente ha deciso di uscire
 
-        if (stop){
-            Thread.currentThread().interrupt();     //ferma il Thread attuale
-        } else {
-            //listenForServerMessage();
+        if (!stop) {
+            try {
+                // Inizializza RSA
+                rsa = new RSA();
 
-            //Da qui comincio con DiffieHellman e RSA
-            rsa = new RSA();    //costruisco RSA
-            runDiffieHellmanAlgorithm();    //algoritmo Diffie-Hellman
-
-            //sendMessageToSocket(socket, "TEST");
+                runDiffieHellmanAlgorithm();
+            } catch (IOException e) {
+                log.error("Errore durante lo scambio Diffie-Hellman", e);
+            }
         }
     }
 
@@ -68,6 +73,10 @@ public class Client implements Runnable{
     private int connectToServer(String machineIP, int port){
         try {
             socket = new Socket(machineIP, port);          //tento connessione a server
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new PrintWriter(socket.getOutputStream(), true);
+            log.info("Connesso al server!");
+            return 1;
         } catch (UnknownHostException unknownHostException){
             log.warn("Il server non esiste");                   //log errore server inesistente
             return 0;                                           //errore
@@ -75,33 +84,6 @@ public class Client implements Runnable{
             log.warn("Errore I/O durante la connessione");      //log errore connessione
             return 0;                                           //errore
         }
-        log.info("Connesso al server!");                        //log connessione del client
-
-        return 1;   //OK
-    }
-
-    /**
-     * Scrive nell'output stream di un Socket
-     *
-     * @param socket Socket
-     * @param message Messaggio da scrivere
-     * @throws IOException Cagati addosso
-     */
-    private void sendMessageToSocket(Socket socket, String message) {
-        PrintWriter pW = null;                                                     //writer per scrivere
-        boolean initialized = false;
-
-        while (!initialized) {
-            try {
-                pW = new PrintWriter(socket.getOutputStream(), true);
-                initialized = true;
-            } catch (IOException e) {
-                log.warn("Errore durante la creazione dell'output stream al server");
-            }
-        }
-
-        pW.println(message);                                                //invio conferma ricezione
-        pW.close();                                                         //chiudo stream
     }
 
     /**
@@ -113,7 +95,7 @@ public class Client implements Runnable{
         BufferedReader bR;
         try {
             bR = new BufferedReader(new InputStreamReader(socket.getInputStream()));    //input stream
-        } catch (IOException ioException){  //TODO PERCHé IBE BASTARDO IL SOCKET QUI è CHIUSO MANNAGGIA ALLE PERSONE CON TANTI PELI SULLO SCROTO
+        } catch (IOException ioException){
             log.warn("Errore durante la creazione dell'input stream");
             return "0";                                       //fermo tentativo ascolto
         }
@@ -145,48 +127,35 @@ public class Client implements Runnable{
     /**
      * Metodo che richiama tutti i sotto-metodi che eseguono l'algoritmo di Diffie-Hellman
      */
-    private void runDiffieHellmanAlgorithm(){
-        sendMessageToSocket(socket, "DH-START");    //inizia Diffie-Hellman
+    private void runDiffieHellmanAlgorithm() throws IOException{
+        //attendo parametri in input dal server
+        String line;
 
-        String listenCode;
-        do {
-            listenCode = listenForServerMessage();
-        } while (listenCode == "1");  //ascolta finché non termina o crasha
+        while ((line = in.readLine()) != null) {
+            if (line.startsWith("DH-P-")) {                         //se inizia con DH-P-
+                P = new BigInteger(line.substring(6));   //salvo P
+            } else if (line.startsWith("DH-G-")) {                  //se inizia con DH-G-
+                G = new BigInteger(line.substring(6));   //salvo G
+            } else if (line.startsWith("DH-SERVER_PUBLIC-")) {
+                //decripta la chiave pubblica del server
+                BigInteger encryptedServerPublicKey = new BigInteger(line.substring(18));
+                BigInteger serverPublicKey = RSA.decrypt(encryptedServerPublicKey);
 
-        /*
-            case "P--" ->{
-                    log.debug("Imposto nuovo valore di P...");
-                    setP(new BigInteger(message.substring(3).getBytes()));
-                    log.debug("Nuovo valore di P impostato");
-                }
-         */
+                clientPrivateKey = new BigInteger(1024, new SecureRandom()); //genero chiave privata del client
 
-        BigInteger anotherKey = generateIntermediateKey(G, privateKey, P);     //genera chiave x
+                clientPublicKey = G.modPow(clientPrivateKey, P);                    //calcolo chiave pubblica del client
 
-        //now send key to other server
-    }
+                BigInteger encryptedClientPublicKey = RSA.encrypt(clientPublicKey); //cripto  la chiave pubblica con RSA
 
-    /**
-     * Genera una chiave necessaria per l'algoritmo di Diffie-Hellman
-     *
-     * @param x Base
-     * @param y Potenza
-     * @param P Modulo
-     * @return Risultato
-     */
-    private static BigInteger generateIntermediateKey(BigInteger x, BigInteger y, BigInteger P){
-        return x.modPow(y, P);
-    }
+                out.println("DH-CLIENT_PUBLIC-" + encryptedClientPublicKey);        //invio chiave pubblica al server
 
-    private static BigInteger generatePrivateKey(BigInteger y){
-        return y.modPow(privateKey, P);
-    }
-
-    public static void setP(BigInteger p) {
-        P = p;
-    }
-
-    public static void setG(BigInteger g) {
-        G = g;
+                BigInteger sharedKey = serverPublicKey.modPow(clientPrivateKey, P); //calcola chiave condivisa
+                log.info("Chiave condivisa calcolata: {}", sharedKey);
+                break;                                                              //esco dall'if
+            } else if (line.equals("DH-COMPLETE")) {
+                log.info("Scambio Diffie-Hellman completato");
+                break;
+            }
+        }
     }
 }

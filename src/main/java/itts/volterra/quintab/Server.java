@@ -19,8 +19,8 @@ public class Server implements Runnable {
     private ServerSocket srvSocket;
 
     //variabili per DH
-    private static final BigInteger DEFAULT_P = new BigInteger("23");  //P
-    private static final BigInteger DEFAULT_G = new BigInteger("5");   //G
+    static final BigInteger DEFAULT_P = new BigInteger("23");  //P
+    static final BigInteger DEFAULT_G = new BigInteger("5");   //G
 
     public Server() throws IOException {
         srvSocket = new ServerSocket(PORT);

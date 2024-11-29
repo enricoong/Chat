@@ -11,6 +11,10 @@ import java.math.BigInteger;
 import java.net.Socket;
 import java.security.SecureRandom;
 
+//importo G e P dal Server
+import static itts.volterra.quintab.Server.DEFAULT_G;
+import static itts.volterra.quintab.Server.DEFAULT_P;
+
 /**
  * Gestisce le connessioni in arrivo
  */
@@ -29,23 +33,38 @@ public class ClientHandler implements Runnable{
         if (!isObjectCreated){      //se il costruttore non è stato eseguito
             log.warn("L’oggetto ClientHandler non è stato costruito con successo");
         } else {
+//            try {
+//                String msg;
+//                do {
+//                    msg = in.readLine();            //leggo messaggio da client
+//                } while (handleMessage(msg, socket) != 1);  //gestisco msg, se errore esco e chiudo connessione
+//
+//                in.close();
+//                socket.close();
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
+
             try {
-                log.debug("Lettura dell'input stream dal Client in corso...");
-                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));    //input stream
-
-                String msg;
-                do {
-                    msg = in.readLine();            //leggo messaggio da client
-                } while (handleMessage(msg, socket) != 1);  //gestisco msg, se errore esco e chiudo connessione
-
-                in.close();
-                socket.close();
+                // Gestisce il protocollo Diffie-Hellman
+                runDiffieHellmanAlgorithm();
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                log.error("Errore durante lo scambio Diffie-Hellman", e);
+            } finally {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    log.error("Errore durante la chiusura del socket", e);
+                }
             }
         }
     }
 
+    /**
+     * Costruttore
+     *
+     * @param client Socket del client da gestire
+     */
     public ClientHandler(Socket client) {
         this.socket = client;
         try {
@@ -61,55 +80,53 @@ public class ClientHandler implements Runnable{
         }
     }
 
+    /**
+     * Genero la chiave privata
+     *
+     * @return Chiave privata
+     */
     private BigInteger generatePrivateKey() {
         return new BigInteger(1024, new SecureRandom());
     }
 
-    /**
-     * Gestisco il messaggio
-     *
-     * @param message Messaggio
-     * @param socket Socket mittente
-     * @return Stato (0 - Errore / 1 - OK)
-     */
-    private int handleMessage(String message, Socket socket){
-        log.debug("Messaggio ricevuto: {}", message);
+    private void runDiffieHellmanAlgorithm() throws IOException {
+        /*
+        Nel messaggio, i primi 3 char servono per capire cosa si vuole fare: DH = si sta eseguendo Diffie-Hellman,
+        poi si usa '-' come carattere di separazione
+         */
 
-        if (message == null){
-            //ricevuto null, ignoro
-            log.debug("Messaggio ignorato perché 'null'");
-            return 1;
-        } else {    //se il messaggio non è null
-            String msgSubstringAfter3 = message.substring(3);   //Contenuto del messaggio dopo le prime 3 cifre
+        //invio parametri pubblici al client
+        out.println("DH-P-" + DEFAULT_P);
+        out.println("DH-G-" + DEFAULT_G);
 
-            switch (message.substring(0, 3)){
-                case "DH-" -> {
-                    manageDiffieHellman(msgSubstringAfter3, socket);    //l'utente sta tentando di eseguire operazioni riguardanti DH
-                    return 1;
-                }
+        //calcolo chiave pubblica del server
+        serverPublicKey = DEFAULT_G.modPow(serverPrivateKey, DEFAULT_P);
+
+        //cripto la chiave pubblica con RSA
+        BigInteger encryptedServerPublicKey = RSA.encrypt(serverPublicKey);
+        out.println("DH-SERVER_PUBLIC-" + encryptedServerPublicKey);
+
+        //attendo la chiave pubblica del client
+        String clientPublicKeyStr = null;
+        String line;
+        while ((line = in.readLine()) != null) {
+            if (line.startsWith("DH-CLIENT_PUBLIC-")) {
+                clientPublicKeyStr = line.substring(18);
+                break;
             }
         }
 
-        return 0;   //error
-    }
+        if (clientPublicKeyStr != null) {
+            //decripto la chiave pubblica del client
+            BigInteger encryptedClientPublicKey = new BigInteger(clientPublicKeyStr);
+            BigInteger clientPublicKey = RSA.decrypt(encryptedClientPublicKey);
 
-    /**
-     * Se l'utente deve eseguire operazioni riguardanti DH, questo metodo viene eseguito, gestendo la richiesta utente
-     *
-     * @param messageContent Messaggio dell'utente (esclusa la prima parte "DH-")
-     */
-    private void manageDiffieHellman(String messageContent, Socket socket){
-        switch (messageContent.substring(0, 5)){
-            case "START" ->{        //l'utente vuole iniziare il protocollo
-                sendMessageToSocket(socket, "P--" + 1234); //invio valore di P al client
-                //TODO
-            }
+            //calcolo la chiave condivisa
+            BigInteger sharedKey = clientPublicKey.modPow(serverPrivateKey, DEFAULT_P);
+            log.info("Chiave condivisa calcolata: {}", sharedKey);
 
-            case "STOP-" ->{
-                sendMessageToSocket(socket, "STOP");
-            }
-
-            //TODO
+            // Invia conferma
+            out.println("DH-COMPLETE");
         }
     }
 
