@@ -14,7 +14,7 @@ import java.net.Socket;
  * Ciclo infinito in attesa di connessioni in entrata, poi inviate a gestire alla classe ClientHandler
  */
 public class Server implements Runnable {
-    private static final Logger log = LogManager.getLogger(Server.class);
+    private final Logger log = LogManager.getLogger(Server.class);
     private static final int PORT =  12345;
     private ServerSocket srvSocket;
 
@@ -28,7 +28,7 @@ public class Server implements Runnable {
 
     @Override
     public void run() {
-        log.debug("IP di questa macchina: {}", getIpOfCurrentMachine());
+        log.info("IP di questa macchina: {}", getIpOfCurrentMachine());
 
         while (true){   //ciclo di ascolto
             try {

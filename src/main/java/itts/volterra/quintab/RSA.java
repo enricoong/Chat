@@ -12,7 +12,6 @@ public class RSA {
    private static final Logger log = LogManager.getLogger(RSA.class);
    private static final int BIT_LENGHT = 1024;   //minimo 1024 in RSA per una chiave sicura
    private static BigInteger n, d, e;
-   private static BigInteger G, P;                // numeri primi
 
    /**
     * Costruttore che mi genera i numeri necessari in futuro per criptare e decriptare.

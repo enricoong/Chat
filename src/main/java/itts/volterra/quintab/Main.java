@@ -13,7 +13,6 @@ import java.util.Scanner;
  */
 public class Main {
    private static final Logger log = LogManager.getLogger(Main.class);
-   private static final Scanner kbInput = new Scanner(System.in);
 
    public static void main(String[] args) {
       //TODO: se stringa da criptare è troppo lunga, la separo in varie parti lunghe ognuna BIT_LENGHT

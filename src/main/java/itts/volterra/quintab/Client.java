@@ -26,16 +26,15 @@ public class Client implements Runnable{
     private BigInteger clientPrivateKey;
     private BigInteger clientPublicKey;
 
-
     @Override
     public void run() {
-       try {
-          Thread.sleep(500);    //sleep perché il messaggio in console appaia senza essere in mezzo ad altre righe
-       } catch (InterruptedException e) {
-          log.warn("Il Thread è stato interrotto durante lo sleep");
-       }
+        try {
+           Thread.sleep(500);    //sleep perché il messaggio in console appaia senza essere in mezzo ad altre righe
+        } catch (InterruptedException e) {
+           log.warn("Il Thread è stato interrotto durante lo sleep");
+        }
 
-       int connecitonResult = 0;
+        int connecitonResult = 0;
         boolean stop = false;
 
         do {
@@ -61,6 +60,8 @@ public class Client implements Runnable{
                 log.error("Errore durante lo scambio Diffie-Hellman", e);
             }
         }
+
+        kbInput.close();
     }
 
     /**
@@ -132,11 +133,11 @@ public class Client implements Runnable{
         String line;
 
         while ((line = in.readLine()) != null) {
-            if (line.startsWith("DH-P-")) {                         //se inizia con DH-P-
+            if (line.startsWith("DH-P--")) {                         //se inizia con DH-P-
                 P = new BigInteger(line.substring(6));   //salvo P
-            } else if (line.startsWith("DH-G-")) {                  //se inizia con DH-G-
+            } else if (line.startsWith("DH-G--")) {                  //se inizia con DH-G-
                 G = new BigInteger(line.substring(6));   //salvo G
-            } else if (line.startsWith("DH-SERVER_PUBLIC-")) {
+            } else if (line.startsWith("DH-SERVER_PUBLIC--")) {
                 //decripta la chiave pubblica del server
                 BigInteger encryptedServerPublicKey = new BigInteger(line.substring(18));
                 BigInteger serverPublicKey = RSA.decrypt(encryptedServerPublicKey);
@@ -147,7 +148,7 @@ public class Client implements Runnable{
 
                 BigInteger encryptedClientPublicKey = RSA.encrypt(clientPublicKey); //cripto  la chiave pubblica con RSA
 
-                out.println("DH-CLIENT_PUBLIC-" + encryptedClientPublicKey);        //invio chiave pubblica al server
+                out.println("DH-CLIENT_PUBLIC--" + encryptedClientPublicKey);        //invio chiave pubblica al server
 
                 BigInteger sharedKey = serverPublicKey.modPow(clientPrivateKey, P); //calcola chiave condivisa
                 log.info("Chiave condivisa calcolata: {}", sharedKey);
