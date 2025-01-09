@@ -11,7 +11,7 @@ import java.util.List;
 public class RSA {
    private static final Logger log = LogManager.getLogger(RSA.class);
    private static final int BIT_LENGHT = 1024;   //minimo 1024 in RSA per una chiave sicura
-   private static BigInteger n, d, e;
+   private BigInteger n, d, e;
 
    /**
     * Costruttore che mi genera i numeri necessari in futuro per criptare e decriptare.
@@ -49,7 +49,7 @@ public class RSA {
     * @param message Stringa da criptare
     * @return Stringa criptata
     */
-   public static BigInteger encrypt(String message){
+   public BigInteger encrypt(String message){
       return encrypt(new BigInteger(message.getBytes()));
    }
 
@@ -60,7 +60,7 @@ public class RSA {
     * @param message BigInteger da criptare
     * @return BigInteger criptato
     */
-   public static BigInteger encrypt(BigInteger message){
+   public BigInteger encrypt(BigInteger message){
       /*
       Se io ho un messaggio lungo più di BIT_LENGHT bit, allora separo il big integer in pezzi lunghi al massimo
       BIT_LENGHT caratteri, ma non per forza con quella lunghezza, esempio: se la lunghezza in bit massima fosse 5 e io
@@ -142,7 +142,7 @@ public class RSA {
     * @param encrypted BigInteger da decriptare
     * @return BigInteger decriptato
     */
-   public static BigInteger decrypt(BigInteger encrypted) {
+   public BigInteger decrypt(BigInteger encrypted) {
       log.info("Decrypting string...");
       return encrypted.modPow(d, n);   //argomenti -> chiave privata
 
@@ -187,7 +187,7 @@ public class RSA {
     * @param encrypted BigInteger da decriptare
     * @return Stringa decriptata
     */
-   public static String decryptToString(BigInteger encrypted) {
+   public String decryptToString(BigInteger encrypted) {
       return new String(decrypt(encrypted).toByteArray());
    }
 

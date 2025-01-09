@@ -61,7 +61,8 @@ public class Client implements Runnable{
             }
         }
 
-        kbInput.close();
+        kbInput.close();                    //chiudo scanner
+        Thread.currentThread().interrupt(); //fermo thread
     }
 
     /**
@@ -135,20 +136,22 @@ public class Client implements Runnable{
         while ((line = in.readLine()) != null) {
             if (line.startsWith("DH-P--")) {                         //se inizia con DH-P-
                 P = new BigInteger(line.substring(6));   //salvo P
+                log.debug("Valore P: {}", P);
             } else if (line.startsWith("DH-G--")) {                  //se inizia con DH-G-
                 G = new BigInteger(line.substring(6));   //salvo G
+                log.debug("Valore G: {}", G);
             } else if (line.startsWith("DH-SERVER_PUBLIC--")) {
                 //decripta la chiave pubblica del server
-                BigInteger encryptedServerPublicKey = new BigInteger(line.substring(18));
-                BigInteger serverPublicKey = RSA.decrypt(encryptedServerPublicKey);
+                BigInteger serverPublicKey = new BigInteger(line.substring(18));
+                //BigInteger serverPublicKey = rsa.decrypt(encryptedServerPublicKey);
 
                 clientPrivateKey = new BigInteger(1024, new SecureRandom()); //genero chiave privata del client
 
                 clientPublicKey = G.modPow(clientPrivateKey, P);                    //calcolo chiave pubblica del client
 
-                BigInteger encryptedClientPublicKey = RSA.encrypt(clientPublicKey); //cripto  la chiave pubblica con RSA
+                //BigInteger encryptedClientPublicKey = rsa.encrypt(clientPublicKey); //cripto  la chiave pubblica con RSA
 
-                out.println("DH-CLIENT_PUBLIC--" + encryptedClientPublicKey);        //invio chiave pubblica al server
+                out.println("DH-CLIENT_PUBLIC--" + clientPublicKey);        //invio chiave pubblica al server
 
                 BigInteger sharedKey = serverPublicKey.modPow(clientPrivateKey, P); //calcola chiave condivisa
                 log.info("Chiave condivisa calcolata: {}", sharedKey);

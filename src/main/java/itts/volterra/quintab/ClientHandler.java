@@ -35,7 +35,6 @@ public class ClientHandler implements Runnable{
      * @param client Socket del client da gestire
      */
     public ClientHandler(Socket client) {
-        //todo MANNAGGIA ALLA MISERIA PERCHé NO SI COSTRUSICE STO OGGETTO DI MERDA
         this.socket = client;
         Thread.currentThread().setName("CltHnd-" + threadCounter);
         threadCounter++;
@@ -92,7 +91,7 @@ public class ClientHandler implements Runnable{
     private void runDiffieHellmanAlgorithm() throws IOException {
         /*
         Nel messaggio, i primi 3 char servono per capire cosa si vuole fare: DH = si sta eseguendo Diffie-Hellman,
-        poi si usa '-' come carattere di separazione
+        poi si usa '--' come carattere di separazione
          */
 
         //invio parametri pubblici al client
@@ -103,8 +102,8 @@ public class ClientHandler implements Runnable{
         serverPublicKey = DEFAULT_G.modPow(serverPrivateKey, DEFAULT_P);
 
         //cripto la chiave pubblica con RSA
-        BigInteger encryptedServerPublicKey = RSA.encrypt(serverPublicKey);
-        out.println("DH-SERVER_PUBLIC--" + encryptedServerPublicKey);
+        //BigInteger encryptedServerPublicKey = rsa.encrypt(serverPublicKey);
+        out.println("DH-SERVER_PUBLIC--" + serverPublicKey);
 
         //attendo la chiave pubblica del client
         String clientPublicKeyStr = null;
@@ -118,8 +117,8 @@ public class ClientHandler implements Runnable{
 
         if (clientPublicKeyStr != null) {
             //decripto la chiave pubblica del client
-            BigInteger encryptedClientPublicKey = new BigInteger(clientPublicKeyStr);
-            BigInteger clientPublicKey = RSA.decrypt(encryptedClientPublicKey);
+            BigInteger clientPublicKey = new BigInteger(clientPublicKeyStr);
+            //BigInteger clientPublicKey = rsa.decrypt(encryptedClientPublicKey);
 
             //calcolo la chiave condivisa
             BigInteger sharedKey = clientPublicKey.modPow(serverPrivateKey, DEFAULT_P);

@@ -14,7 +14,7 @@ import java.util.Scanner;
 public class Main {
    private static final Logger log = LogManager.getLogger(Main.class);
 
-   public static void main(String[] args) {
+   public static void main(String[] args) throws InterruptedException {
       //TODO: se stringa da criptare è troppo lunga, la separo in varie parti lunghe ognuna BIT_LENGHT
 
 //      String stringa;   //dichiaro stringa di prendere in ingresso
@@ -49,6 +49,8 @@ public class Main {
          log.error("Che palle (RuntimeException)");   //log
          throw new RuntimeException(e);               //lancio eccezione anch'io perché non mi pagano per far sta roba
       }
-      new Thread(new Client()).start();               //avvio client
+
+      new Thread(new Client()).start();               //avvio client 1
+      //new Thread(new Client()).start();               //avvio client 2
    }
 }
