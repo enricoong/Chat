@@ -25,6 +25,8 @@ public class Client implements Runnable{
     private BigInteger P, G;
     private BigInteger clientPrivateKey;
     private BigInteger clientPublicKey;
+    private BigInteger sharedKey;
+    private boolean isSharedKeyReady = false;
 
     @Override
     public void run() {
@@ -56,6 +58,8 @@ public class Client implements Runnable{
                 rsa = new RSA();
 
                 runDiffieHellmanAlgorithm();
+
+                //continua
             } catch (IOException e) {
                 log.error("Errore durante lo scambio Diffie-Hellman", e);
             }
@@ -153,7 +157,8 @@ public class Client implements Runnable{
 
                 out.println("DH-CLIENT_PUBLIC--" + clientPublicKey);        //invio chiave pubblica al server
 
-                BigInteger sharedKey = serverPublicKey.modPow(clientPrivateKey, P); //calcola chiave condivisa
+                sharedKey = serverPublicKey.modPow(clientPrivateKey, P);    //calcola chiave condivisa
+                isSharedKeyReady = true;                                    //dichiaro che la chiave condivisa è pronta
                 log.info("Chiave condivisa calcolata: {}", sharedKey);
                 break;                                                              //esco dall'if
             } else if (line.equals("DH-COMPLETE")) {

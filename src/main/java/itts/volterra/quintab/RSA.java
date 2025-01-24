@@ -5,8 +5,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.List;
 
 public class RSA {
    private static final Logger log = LogManager.getLogger(RSA.class);
@@ -67,73 +65,9 @@ public class RSA {
       devo criptare un messaggio lungo 13 allora lo dividerebbe in 5+5+3, poi li cripta singolarmente e li rimette insieme
        */
 
-//      if (message.bitLength() > BIT_LENGHT){
-//         //separo in pezzi
-////         int nPezzi = message.bitLength() / BIT_LENGHT;  //calcolo numero di pezzi interi
-////         if (message.bitLength() % BIT_LENGHT != 0){     //se c'è il resto della divisione
-////            nPezzi++;                                    //aggiungo una altro pezzo
-////         }
-////
-////         log.debug("Numero di pezzi in cui dividere il messaggio: {}/" + BIT_LENGHT + "={}", message.bitLength(), nPezzi);
-////
-////         StringBuilder messaggioCriptato = new StringBuilder();   //StringBuilder dove metterò i pezzi del messaggio criptato
-//
-//         nPezzi = (message.bitLength() + BIT_LENGHT - 1) / BIT_LENGHT;  // divisione con arrotondamento per eccesso
-//
-//         log.debug("Numero di pezzi in cui dividere il messaggio: {}/" + BIT_LENGHT + "={}", message.bitLength(), nPezzi);
-//
-//         StringBuilder messaggioCriptato = new StringBuilder();
-//         String messageStr = message.toString();
-//         int charPerBlock = BIT_LENGHT / 16;  // numero di caratteri per blocco
-//
-//         //i = contatore bit | j = contatore
-////         for (int i = 0, j = 0; j<=nPezzi; i += (BIT_LENGHT/16), j++) {
-////            log.debug("Ciclo: {}", j);
-////            String block;
-////            if (j == nPezzi){                                                 //se sono all'ultimo pezzo del messaggio
-////               // TODO il messaggio qui dovrebbe essere lungo meno di 1024, ma non funziona
-////               block = message.toString().substring(i);                       //il blocco va da 'i' alla fine del messaggio
-////            } else {                                                          //altrimenti
-////               block = message.toString().substring(i, i+(BIT_LENGHT/16));    //il blocco va da 'i' a 'i+BIT_LENGHT'
-////            }
-////
-////            //ora devo criptare il singolo messaggio
-////            BigInteger bloccoCriptato = encrypt(new BigInteger(block));
-////            messaggioCriptato.append(bloccoCriptato);
-////            log.debug("Aggiunto al messaggio criptato un blocco: {}", bloccoCriptato);
-//         for (int i = 0, j = 0; j < nPezzi; j++) {
-//            log.debug("Ciclo: {}", j);
-//            String block;
-//            int startIndex = i;
-//            int endIndex = Math.min(i + charPerBlock, messageStr.length());
-//
-//            block = messageStr.substring(startIndex, endIndex);
-//
-//            // Verifica lunghezza del blocco in bit
-//            BigInteger blockInt = new BigInteger(block);
-//            if (blockInt.bitLength() > BIT_LENGHT) {
-//               log.warn("Blocco troppo lungo: {} bits", blockInt.bitLength());
-//               // Se necessario, tronca il blocco
-//               endIndex = startIndex + (charPerBlock - 1);
-//               block = messageStr.substring(startIndex, endIndex);
-//               blockInt = new BigInteger(block);
-//            }
-//
-//            BigInteger bloccoCriptato = encrypt(blockInt);
-//            messaggioCriptato.append(bloccoCriptato);
-//            log.debug("Aggiunto al messaggio criptato un blocco: {} (lunghezza in bit: {})",
-//                    bloccoCriptato, blockInt.bitLength());
-//
-//            i = endIndex; // Aggiorna l'indice per il prossimo blocco
-//         }
-//
-//         log.info("Encrypting string...");
-//         return new BigInteger(messaggioCriptato.toString());
-//      } else{
-         //ritorno stringa intera criptata
-         log.info("Encrypting string...");
-         return message.modPow(e, n);  //argomenti -> chiave pubblica
-//      }
+      //ritorno stringa intera criptata
+      log.info("Encrypting string...");
+      return message.modPow(e, n);  //argomenti -> chiave pubblica
    }
 
    /**
@@ -145,41 +79,7 @@ public class RSA {
    public BigInteger decrypt(BigInteger encrypted) {
       log.info("Decrypting string...");
       return encrypted.modPow(d, n);   //argomenti -> chiave privata
-
-//      String messageStr = encrypted.toString();
-//      int blockSize = BIT_LENGHT / 16;  // Numero di caratteri per blocco nel messaggio criptato
-//      int messageLength = messageStr.length();
-//      int nBlocchi = nPezzi;
-//
-//      log.debug("Decrypting message of length {} in {} blocks", messageLength, nBlocchi);
-//
-//      StringBuilder decryptedMessage = new StringBuilder();
-//
-//      for (int i = 0; i < nBlocchi; i++) {
-//         int startIndex = i * blockSize;
-//         int endIndex = Math.min(startIndex + blockSize, messageLength);
-//
-//         try {
-//            String encryptedBlock = messageStr.substring(startIndex, endIndex);
-//            BigInteger encryptedBlockInt = new BigInteger(encryptedBlock);
-//            BigInteger decryptedBlock = decryptBlock(encryptedBlockInt);
-//
-//            decryptedMessage.append(decryptedBlock.toString());
-//            log.debug("Decrypted block {}/{}: {} -> {}",
-//                    i + 1, nBlocchi, encryptedBlock, decryptedBlock);
-//
-//         } catch (NumberFormatException e) {
-//            log.error("Error decrypting block at position {}: {}", i, e.getMessage());
-//         }
-//      }
-//
-//      log.info("Message decrypted successfully");
-//      return new BigInteger(decryptedMessage.toString());
    }
-
-//   private static BigInteger decryptBlock(BigInteger encryptedBlockInt) {
-//      return encryptedBlockInt.modPow(d, n);
-//   }
 
    /**
     * Decripta un BigInteger e lo converte in stringa
@@ -190,17 +90,4 @@ public class RSA {
    public String decryptToString(BigInteger encrypted) {
       return new String(decrypt(encrypted).toByteArray());
    }
-
-   /**
-    * Separa un BigInteger in pezzi di determinata lunghezza
-    *
-    * @param num BigInteger da separare
-    * @param chunkSize Dimensione del singolo blocco
-    * @return List di tutti i pezzi
-    */
-//   public static List<BigInteger> splitBigInteger(BigInteger num, int chunkSize) {
-//      //TODO
-//   }
-
-
 }
