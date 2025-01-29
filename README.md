@@ -1,6 +1,6 @@
 # Chat Project
 [Client side]
-This Java-based chat server project, developed by EnryX72 and Giovanni Battistelli, is designed as an annual assignment for Professor Giachetto. 
+This Java-based chat server project, developed by Enrico Negretto and Giovanni Battistelli, is designed as an annual assignment for Professor Giachetto. 
 The application provides a basic framework for a server-client chat system.
 This projects aims at providing an encrypted connection among multiple clients and a server, which will interact with a database.
 ## Features
@@ -8,14 +8,14 @@ This projects aims at providing an encrypted connection among multiple clients a
 - Threaded server to manage multiple connections
 - Basic message broadcasting to all connected clients
 - Diffie-Hellman key exchange
-- RSA key generation algorithm
+- AES message encryption
 ## Requirements
 - Java Development Kit (JDK) 8+
 - Maven for dependency management
 ## Setup and Usage
 Clone the repository:
 ```
-git clone https://github.com/EnryX72/Chat_Server.git
+git clone https://github.com/EnryX72/Chat.git
 ```
 Navigate into the directory:
 ```
