@@ -14,15 +14,19 @@ import java.util.Scanner;
 
 public class Client implements Runnable{
 
+    private static RSA rsa;
     private static final Logger log = LogManager.getLogger(Client.class);
     private BufferedReader in;
     private PrintWriter out;
     private Scanner kbInput = new Scanner(System.in);
+    private Socket socket;
 
     //parametri Diffie-Hellman
     private BigInteger P, G;
     private BigInteger clientPrivateKey;
     private BigInteger clientPublicKey;
+    private BigInteger sharedKey;
+    private boolean isSharedKeyReady = false;
 
     @Override
     public void run() {
@@ -51,6 +55,8 @@ public class Client implements Runnable{
         if (!stop) {
             try {
                 runDiffieHellmanAlgorithm();
+
+                //continua
             } catch (IOException e) {
                 log.error("Errore durante lo scambio Diffie-Hellman", e);
             }
@@ -136,28 +142,29 @@ public class Client implements Runnable{
         String line;
 
         while ((line = in.readLine()) != null) {
-            if (line.startsWith("DH-P--")) {                            //se inizia con DH-P-
-                P = new BigInteger(line.substring(6));        //salvo P
+            if (line.startsWith("DH-P--")) {                         //se inizia con DH-P-
+                P = new BigInteger(line.substring(6));   //salvo P
                 log.debug("Valore P: {}", P);
-            } else if (line.startsWith("DH-G--")) {                     //se inizia con DH-G-
-                G = new BigInteger(line.substring(6));        //salvo G
+            } else if (line.startsWith("DH-G--")) {                  //se inizia con DH-G-
+                G = new BigInteger(line.substring(6));   //salvo G
                 log.debug("Valore G: {}", G);
             } else if (line.startsWith("DH-SERVER_PUBLIC--")) {
                 //decripta la chiave pubblica del server
                 BigInteger serverPublicKey = new BigInteger(line.substring(18));
                 //BigInteger serverPublicKey = rsa.decrypt(encryptedServerPublicKey);
 
-                clientPrivateKey = new BigInteger(1024, new SecureRandom());  //genero chiave privata del client
+                clientPrivateKey = new BigInteger(1024, new SecureRandom()); //genero chiave privata del client
 
-                clientPublicKey = G.modPow(clientPrivateKey, P);                      //calcolo chiave pubblica del client
+                clientPublicKey = G.modPow(clientPrivateKey, P);                    //calcolo chiave pubblica del client
 
                 //BigInteger encryptedClientPublicKey = rsa.encrypt(clientPublicKey); //cripto  la chiave pubblica con RSA
 
-                out.println("DH-CLIENT_PUBLIC--" + clientPublicKey);                  //invio chiave pubblica al server
+                out.println("DH-CLIENT_PUBLIC--" + clientPublicKey);        //invio chiave pubblica al server
 
-                BigInteger sharedKey = serverPublicKey.modPow(clientPrivateKey, P);   //calcola chiave condivisa
+                sharedKey = serverPublicKey.modPow(clientPrivateKey, P);    //calcola chiave condivisa
+                isSharedKeyReady = true;                                    //dichiaro che la chiave condivisa è pronta
                 log.info("Chiave condivisa calcolata: {}", sharedKey);
-                break;                                                                //esco dall'if
+                break;                                                              //esco dall'if
             } else if (line.equals("DH-COMPLETE")) {
                 log.info("Scambio Diffie-Hellman completato");
                 break;
