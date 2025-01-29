@@ -1,4 +1,4 @@
-package itts.volterra.quintab;
+package itts.volterra.quintab.Server;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -12,8 +12,8 @@ import java.net.Socket;
 import java.security.SecureRandom;
 
 //importo G e P dal Server
-import static itts.volterra.quintab.Server.DEFAULT_G;
-import static itts.volterra.quintab.Server.DEFAULT_P;
+import static itts.volterra.quintab.Server.Server.DEFAULT_G;
+import static itts.volterra.quintab.Server.Server.DEFAULT_P;
 
 /**
  * Gestisce le connessioni in arrivo
@@ -27,7 +27,6 @@ public class ClientHandler implements Runnable{
     private PrintWriter out;
     private BigInteger serverPrivateKey;
     private BigInteger serverPublicKey;
-    private RSA rsa;
 
     /**
      * Costruttore
@@ -42,8 +41,6 @@ public class ClientHandler implements Runnable{
         try {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
-
-            rsa = new RSA();
 
             //genera chiave privata del server
             serverPrivateKey = generatePrivateKey();

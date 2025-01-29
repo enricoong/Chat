@@ -1,4 +1,4 @@
-package itts.volterra.quintab;
+package itts.volterra.quintab.Client;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,12 +14,10 @@ import java.util.Scanner;
 
 public class Client implements Runnable{
 
-    private static RSA rsa;
     private static final Logger log = LogManager.getLogger(Client.class);
     private BufferedReader in;
     private PrintWriter out;
     private Scanner kbInput = new Scanner(System.in);
-    private Socket socket;
 
     //parametri Diffie-Hellman
     private BigInteger P, G;
@@ -52,9 +50,6 @@ public class Client implements Runnable{
 
         if (!stop) {
             try {
-                // Inizializza RSA
-                rsa = new RSA();
-
                 runDiffieHellmanAlgorithm();
             } catch (IOException e) {
                 log.error("Errore durante lo scambio Diffie-Hellman", e);
@@ -73,10 +68,9 @@ public class Client implements Runnable{
      * @return Codice di stato (0 - Errore / 1 - OK)
      */
     private int connectToServer(String machineIP, int port){
-        try {
-            socket = new Socket(machineIP, port);          //tento connessione a server
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true);
+        try (Socket socket = new Socket(machineIP, port)){
+            in = initializeReader(socket);
+            out = initializeWriter(socket);
             log.info("Connesso al server!");
             return 1;
         } catch (UnknownHostException unknownHostException){
@@ -86,6 +80,14 @@ public class Client implements Runnable{
             log.warn("Errore I/O durante la connessione");      //log errore connessione
             return 0;                                           //errore
         }
+    }
+
+    private BufferedReader initializeReader(Socket socket) throws IOException {
+        return new BufferedReader(new InputStreamReader(socket.getInputStream()));
+    }
+
+    private PrintWriter initializeWriter(Socket socket) throws IOException {
+        return new PrintWriter(socket.getOutputStream(), true);
     }
 
     /**
@@ -134,28 +136,28 @@ public class Client implements Runnable{
         String line;
 
         while ((line = in.readLine()) != null) {
-            if (line.startsWith("DH-P--")) {                         //se inizia con DH-P-
-                P = new BigInteger(line.substring(6));   //salvo P
+            if (line.startsWith("DH-P--")) {                            //se inizia con DH-P-
+                P = new BigInteger(line.substring(6));        //salvo P
                 log.debug("Valore P: {}", P);
-            } else if (line.startsWith("DH-G--")) {                  //se inizia con DH-G-
-                G = new BigInteger(line.substring(6));   //salvo G
+            } else if (line.startsWith("DH-G--")) {                     //se inizia con DH-G-
+                G = new BigInteger(line.substring(6));        //salvo G
                 log.debug("Valore G: {}", G);
             } else if (line.startsWith("DH-SERVER_PUBLIC--")) {
                 //decripta la chiave pubblica del server
                 BigInteger serverPublicKey = new BigInteger(line.substring(18));
                 //BigInteger serverPublicKey = rsa.decrypt(encryptedServerPublicKey);
 
-                clientPrivateKey = new BigInteger(1024, new SecureRandom()); //genero chiave privata del client
+                clientPrivateKey = new BigInteger(1024, new SecureRandom());  //genero chiave privata del client
 
-                clientPublicKey = G.modPow(clientPrivateKey, P);                    //calcolo chiave pubblica del client
+                clientPublicKey = G.modPow(clientPrivateKey, P);                      //calcolo chiave pubblica del client
 
                 //BigInteger encryptedClientPublicKey = rsa.encrypt(clientPublicKey); //cripto  la chiave pubblica con RSA
 
-                out.println("DH-CLIENT_PUBLIC--" + clientPublicKey);        //invio chiave pubblica al server
+                out.println("DH-CLIENT_PUBLIC--" + clientPublicKey);                  //invio chiave pubblica al server
 
-                BigInteger sharedKey = serverPublicKey.modPow(clientPrivateKey, P); //calcola chiave condivisa
+                BigInteger sharedKey = serverPublicKey.modPow(clientPrivateKey, P);   //calcola chiave condivisa
                 log.info("Chiave condivisa calcolata: {}", sharedKey);
-                break;                                                              //esco dall'if
+                break;                                                                //esco dall'if
             } else if (line.equals("DH-COMPLETE")) {
                 log.info("Scambio Diffie-Hellman completato");
                 break;

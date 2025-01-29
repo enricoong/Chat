@@ -1,4 +1,4 @@
-package itts.volterra.quintab;
+package itts.volterra.quintab.Server;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,8 +19,10 @@ public class Server implements Runnable {
     private ServerSocket srvSocket;
 
     //variabili per DH
-    static final BigInteger DEFAULT_P = new BigInteger("23");  //P
-    static final BigInteger DEFAULT_G = new BigInteger("5");   //G
+    static final String DP = "fca682ce8e12caba26efccf7110e526db078b05edecbcd1eb4a208f3ae1617ae01f35b91a47e6df63413c5e12ed0899bcd132acd50d99151bdc43ee737592e17";
+    static final String DG = "678471b27a9cf44ee91a49c5147db1a9aaf244f05a434d6486931d2d14271b9e35030b71fd73da179069b32e2935630e1c2062354d0da20a6c416e50be794ca42";
+    static final BigInteger DEFAULT_P = new BigInteger(DP, 16);  //P
+    static final BigInteger DEFAULT_G = new BigInteger(DG, 16);  //G
 
     public Server() throws IOException {
         srvSocket = new ServerSocket(PORT);
