@@ -1,8 +1,10 @@
 package itts.volterra.quintab.Server;
 
+import itts.volterra.quintab.Features.AES;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.crypto.SecretKey;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -27,6 +29,8 @@ public class ClientHandler implements Runnable{
     private PrintWriter out;
     private BigInteger serverPrivateKey;
     private BigInteger serverPublicKey;
+    private BigInteger sharedKey;
+    private SecretKey AESKey;
 
     /**
      * Costruttore
@@ -64,6 +68,9 @@ public class ClientHandler implements Runnable{
             try {
                 //gestisce Diffie-Hellman
                 runDiffieHellmanAlgorithm();
+                AESKey = AES.generateKeyForAES(sharedKey);
+                log.debug("Chiave AES: {}", AESKey.hashCode());
+
             } catch (IOException e) {
                 log.error("Errore durante lo scambio Diffie-Hellman", e);
             } finally {
@@ -118,7 +125,7 @@ public class ClientHandler implements Runnable{
             //BigInteger clientPublicKey = rsa.decrypt(encryptedClientPublicKey);
 
             //calcolo la chiave condivisa
-            BigInteger sharedKey = clientPublicKey.modPow(serverPrivateKey, DEFAULT_P);
+            sharedKey = clientPublicKey.modPow(serverPrivateKey, DEFAULT_P);
             log.info("Chiave condivisa calcolata: {}", sharedKey);
 
             // Invia conferma

@@ -1,11 +1,11 @@
-package itts.volterra.quintab.Client;
+package itts.volterra.quintab.Features;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
  * La classe Encryption permette di utilizzare svariati algoritmi di criptazione
  */
-public class Encryption {
+public class SHA256 {
     /**
      * Algoritmo SHA-256
      *
@@ -13,7 +13,7 @@ public class Encryption {
      * @return Stringa criptata
      * @throws NoSuchAlgorithmException Algoritmo non disponibile
      */
-    public static String sha256(String s) throws NoSuchAlgorithmException {
+    public static String encrypt(String s) throws NoSuchAlgorithmException {
         // acquisisci algoritmo SHA-256 da MessageDigest
         MessageDigest md = MessageDigest.getInstance("SHA-256");
 
