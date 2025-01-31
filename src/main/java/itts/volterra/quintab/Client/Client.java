@@ -65,7 +65,7 @@ public class Client implements Runnable {
 
             log.debug("Chiave AES: {}", AESKey.hashCode());
 
-            sendMessageToSocket(server, "prova");
+            sendMessageToSocket("F-16 palle bagnate");
 
             //continua
          } catch (IOException e) {
@@ -78,7 +78,7 @@ public class Client implements Runnable {
    }
 
    /**
-    * Si connette a una macchina e ci comunica
+    * Si connette a una macchina
     *
     * @param machineIP IP macchina
     * @param port      Porta di connessione
@@ -100,19 +100,7 @@ public class Client implements Runnable {
       }
    }
 
-   private void sendMessageToSocket(Socket socket, String message) {
-      PrintWriter pW = null;                                                     //writer per scrivere
-      boolean initialized = false;
-
-      while (!initialized) {
-         try {
-            pW = new PrintWriter(socket.getOutputStream(), true);
-            initialized = true;
-         } catch (IOException e) {
-            log.warn("Errore durante la creazione dell'output stream");
-         }
-      }
-
+   private void sendMessageToSocket(String message) {
       if (AESKey.isDestroyed()){
          log.warn("Non è stato possibile inviare il messaggio perché la chiave AES è stata distrutta");
          return;
@@ -126,9 +114,10 @@ public class Client implements Runnable {
          return;
       }
 
-      pW.println(encryptedMessage);    //invio conferma ricezione
-      pW.flush();                      //forzo invio messaggio
-      //pW.close();                    //chiudo stream
+      out.println(encryptedMessage);    //invio messaggio
+      out.flush();                      //forzo invio messaggio
+      log.debug("Messaggio inviato, contenuto del messaggio: '{}'", message);
+      //out.close();                    //chiudo stream
    }
 
    private BufferedReader initializeReader(Socket socket) throws IOException {

@@ -103,16 +103,22 @@ public class ClientHandler implements Runnable {
 
                                 //elabora il messaggio e invia risposta
                                 //processMessage(decryptedMessage);
+
+                                //temporaneo:
+                                if (decryptedMessage.equalsIgnoreCase("STOP")){
+                                    stop = true;
+                                    closeConnection();
+                                }
                             }
                         }
                     } while (!stop);
-
-                    closeConnection();
                 }
             } catch (IOException e) {
                 log.error("Errore durante la comunicazione", e);
             } finally {
-                closeConnection();
+                if (isRunning){
+                    closeConnection();
+                }
             }
         }
     }
