@@ -56,10 +56,16 @@ public class Client implements Runnable {
       if (!stop) {
          try {
             runDiffieHellmanAlgorithm();
+
+            log.debug("Shared key bytes length: {}", sharedKey.toByteArray().length);
             AESKey = AES.generateKeyForAES(sharedKey);
+            log.debug("AES key algorithm: {}", AESKey.getAlgorithm());
+            log.debug("AES key format: {}", AESKey.getFormat());
+            log.debug("AES key encoded length: {}", AESKey.getEncoded().length);
+
             log.debug("Chiave AES: {}", AESKey.hashCode());
 
-            sendMessageToSocket(server, "PROVA");
+            sendMessageToSocket(server, "prova");
 
             //continua
          } catch (IOException e) {
@@ -112,16 +118,17 @@ public class Client implements Runnable {
          return;
       }
 
+      String encryptedMessage;
       try {
-         String encryptedMessage = AES.encrypt(message, AESKey);  //cripto messaggio
+         encryptedMessage = AES.encrypt(message, AESKey);  //cripto messaggio
       } catch (Exception e){
          log.warn("Errore durante la criptazione del messaggio, non è stato possibile inviare il messaggio");
          return;
       }
 
-      pW.println(message);    //invio conferma ricezione
-      pW.flush();             //forzo invio messaggio
-      pW.close();             //chiudo stream
+      pW.println(encryptedMessage);    //invio conferma ricezione
+      pW.flush();                      //forzo invio messaggio
+      //pW.close();                    //chiudo stream
    }
 
    private BufferedReader initializeReader(Socket socket) throws IOException {

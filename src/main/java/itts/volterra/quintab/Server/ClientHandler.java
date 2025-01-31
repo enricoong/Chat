@@ -20,7 +20,7 @@ import static itts.volterra.quintab.Server.Server.DEFAULT_P;
 /**
  * Gestisce le connessioni in arrivo
  */
-public class ClientHandler implements Runnable{
+public class ClientHandler implements Runnable {
     private static int threadCounter = 0;
     public boolean isObjectCreated;
     private final Logger log = LogManager.getLogger(ClientHandler.class);
@@ -31,6 +31,7 @@ public class ClientHandler implements Runnable{
     private BigInteger serverPublicKey;
     private BigInteger sharedKey;
     private SecretKey AESKey;
+    private volatile boolean isRunning = true;
 
     /**
      * Costruttore
@@ -62,46 +63,69 @@ public class ClientHandler implements Runnable{
 
     @Override
     public void run() {
-        if (!isObjectCreated){      //se il costruttore non è stato eseguito
+        if (!isObjectCreated) {      //se il costruttore non è stato eseguito
             log.warn("L’oggetto ClientHandler non è stato costruito con successo");
         } else {
             try {
                 //gestisce Diffie-Hellman
                 runDiffieHellmanAlgorithm();
+
+                log.debug("Shared key bytes length: {}", sharedKey.toByteArray().length);
                 AESKey = AES.generateKeyForAES(sharedKey);
-                log.debug("Chiave AES: {}", AESKey.hashCode());
+                log.debug("AES key format: {}", AESKey.getFormat());
+                log.debug("AES key encoded length: {}", AESKey.getEncoded().length);
+                log.debug("Hash della chiave AES: {}", AESKey.hashCode());
 
-                String message;
-                while ((message = in.readLine()) != null) {
-                    boolean messageOk = true;
-                    String decryptedMessage = null;
+                while (isRunning && !socket.isClosed()) {
+                    String message = "EMPTY_MESSAGE";
+                    boolean stop = false;
+                    do {
+                        message = in.readLine();
+                        if (message != null){
+                            boolean messageOk = true;
+                            String decryptedMessage = null;
 
-                    //decifra il messaggio
-                    try {
-                        decryptedMessage = AES.decrypt(message, AESKey);
-                    } catch (Exception e){
-                        //se errore durante decriptazione
-                        messageOk = false;
-                        log.warn("Errore durante la decriptazione del messaggio ricevuto dal client");
-                    }
+                            log.debug("Messaggio ricevuto: {}", message);
 
-                    //se non ci sono stati errori durante la decriptazione
-                    if (messageOk) {
-                        log.info("Messaggio ricevuto dal client: {}", decryptedMessage);
+                            //decifra il messaggio
+                            try {
+                                decryptedMessage = AES.decrypt(message, AESKey);
+                            } catch (Exception e) {
+                                //se errore durante decriptazione
+                                messageOk = false;
+                                log.warn("Errore durante la decriptazione del messaggio ricevuto dal client: {}", e);
+                                log.error("Messaggio che ha causato l'errore: {}", message);
+                            }
 
-                        //elabora il messaggio e invia risposta
-                        //processMessage(decryptedMessage);
-                    }
+                            //se non ci sono stati errori durante la decriptazione
+                            if (messageOk) {
+                                log.info("Messaggio ricevuto dal client: {}", decryptedMessage);
+
+                                //elabora il messaggio e invia risposta
+                                //processMessage(decryptedMessage);
+                            }
+                        }
+                    } while (!stop);
+
+                    closeConnection();
                 }
             } catch (IOException e) {
                 log.error("Errore durante la comunicazione", e);
             } finally {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    log.error("Errore durante la chiusura del socket", e);
-                }
+                closeConnection();
             }
+        }
+    }
+
+    private void closeConnection() {
+        isRunning = false;
+        try {
+            if (in != null) in.close();
+            if (out != null) out.close();
+            if (socket != null && !socket.isClosed()) socket.close();
+            log.info("Connessione chiusa correttamente");
+        } catch (IOException e) {
+            log.error("Errore durante la chiusura della connessione: ", e);
         }
     }
 
@@ -158,7 +182,7 @@ public class ClientHandler implements Runnable{
     /**
      * Scrive nell'output stream di un Socket
      *
-     * @param socket Socket
+     * @param socket  Socket
      * @param message Messaggio da scrivere
      * @throws IOException Cagati addosso
      */
@@ -176,6 +200,6 @@ public class ClientHandler implements Runnable{
         }
 
         pW.println(message);                                                //invio conferma ricezione
-        pW.close();                                                         //chiudo stream
+        //pW.close();                                                         //chiudo stream
     }
 }
