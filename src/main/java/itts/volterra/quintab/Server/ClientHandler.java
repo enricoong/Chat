@@ -71,8 +71,30 @@ public class ClientHandler implements Runnable{
                 AESKey = AES.generateKeyForAES(sharedKey);
                 log.debug("Chiave AES: {}", AESKey.hashCode());
 
+                String message;
+                while ((message = in.readLine()) != null) {
+                    boolean messageOk = true;
+                    String decryptedMessage = null;
+
+                    //decifra il messaggio
+                    try {
+                        decryptedMessage = AES.decrypt(message, AESKey);
+                    } catch (Exception e){
+                        //se errore durante decriptazione
+                        messageOk = false;
+                        log.warn("Errore durante la decriptazione del messaggio ricevuto dal client");
+                    }
+
+                    //se non ci sono stati errori durante la decriptazione
+                    if (messageOk) {
+                        log.info("Messaggio ricevuto dal client: {}", decryptedMessage);
+
+                        //elabora il messaggio e invia risposta
+                        //processMessage(decryptedMessage);
+                    }
+                }
             } catch (IOException e) {
-                log.error("Errore durante lo scambio Diffie-Hellman", e);
+                log.error("Errore durante la comunicazione", e);
             } finally {
                 try {
                     socket.close();

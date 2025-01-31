@@ -5,7 +5,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,7 +20,7 @@ public class Client implements Runnable {
    private BufferedReader in;
    private PrintWriter out;
    private Scanner kbInput = new Scanner(System.in);
-   private Socket socket;
+   private Socket server;
 
    //parametri Diffie-Hellman
    private BigInteger P, G;
@@ -60,6 +59,8 @@ public class Client implements Runnable {
             AESKey = AES.generateKeyForAES(sharedKey);
             log.debug("Chiave AES: {}", AESKey.hashCode());
 
+            sendMessageToSocket(server, "PROVA");
+
             //continua
          } catch (IOException e) {
             log.error("Errore durante lo scambio Diffie-Hellman", e);
@@ -79,9 +80,9 @@ public class Client implements Runnable {
     */
    private int connectToServer(String machineIP, int port) {
       try {
-         socket = new Socket(machineIP, port);
-         in = initializeReader(socket);
-         out = initializeWriter(socket);
+         server = new Socket(machineIP, port);
+         in = initializeReader(server);
+         out = initializeWriter(server);
          log.info("Connesso al server!");
          return 1;
       } catch (UnknownHostException unknownHostException) {
@@ -91,6 +92,36 @@ public class Client implements Runnable {
          log.warn("Errore I/O durante la connessione");      //log errore connessione
          return 0;                                           //errore
       }
+   }
+
+   private void sendMessageToSocket(Socket socket, String message) {
+      PrintWriter pW = null;                                                     //writer per scrivere
+      boolean initialized = false;
+
+      while (!initialized) {
+         try {
+            pW = new PrintWriter(socket.getOutputStream(), true);
+            initialized = true;
+         } catch (IOException e) {
+            log.warn("Errore durante la creazione dell'output stream");
+         }
+      }
+
+      if (AESKey.isDestroyed()){
+         log.warn("Non è stato possibile inviare il messaggio perché la chiave AES è stata distrutta");
+         return;
+      }
+
+      try {
+         String encryptedMessage = AES.encrypt(message, AESKey);  //cripto messaggio
+      } catch (Exception e){
+         log.warn("Errore durante la criptazione del messaggio, non è stato possibile inviare il messaggio");
+         return;
+      }
+
+      pW.println(message);    //invio conferma ricezione
+      pW.flush();             //forzo invio messaggio
+      pW.close();             //chiudo stream
    }
 
    private BufferedReader initializeReader(Socket socket) throws IOException {
@@ -109,7 +140,7 @@ public class Client implements Runnable {
    private String listenForServerMessage() {
       BufferedReader bR;
       try {
-         bR = new BufferedReader(new InputStreamReader(socket.getInputStream()));    //input stream
+         bR = new BufferedReader(new InputStreamReader(server.getInputStream()));    //input stream
       } catch (IOException ioException) {
          log.warn("Errore durante la creazione dell'input stream");
          return "0";                                       //fermo tentativo ascolto
