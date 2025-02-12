@@ -21,7 +21,6 @@ import static itts.volterra.quintab.Server.Server.DEFAULT_P;
  * Gestisce le connessioni in arrivo
  */
 public class ClientHandler implements Runnable {
-    private static int threadCounter = 0;
     public boolean isObjectCreated;
     private final Logger log = LogManager.getLogger(ClientHandler.class);
     private Socket socket;
@@ -40,8 +39,6 @@ public class ClientHandler implements Runnable {
      */
     public ClientHandler(Socket client) {
         this.socket = client;
-        Thread.currentThread().setName("CltHnd-" + threadCounter);
-        threadCounter++;
 
         try {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -99,7 +96,7 @@ public class ClientHandler implements Runnable {
 
                             //se non ci sono stati errori durante la decriptazione
                             if (messageOk) {
-                                log.info("Messaggio ricevuto dal client: {}", decryptedMessage);
+                                log.info("Messaggio ricevuto (decriptato): {}", decryptedMessage);
 
                                 //elabora il messaggio e invia risposta
                                 //processMessage(decryptedMessage);

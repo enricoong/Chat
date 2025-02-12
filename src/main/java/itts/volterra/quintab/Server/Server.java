@@ -17,6 +17,7 @@ public class Server implements Runnable {
     private final Logger log = LogManager.getLogger(Server.class);
     private static final int PORT =  12345;
     private ServerSocket srvSocket;
+    private static int threadCounter = 0;
 
     //variabili per DH
     static final String DP = "fca682ce8e12caba26efccf7110e526db078b05edecbcd1eb4a208f3ae1617ae01f35b91a47e6df63413c5e12ed0899bcd132acd50d99151bdc43ee737592e17";
@@ -39,7 +40,10 @@ public class Server implements Runnable {
                 log.info("Client connesso!");                                   //log connessione del client
 
                 ClientHandler clientHandler = new ClientHandler(otherClient);   //Passo il Socket
-                new Thread(clientHandler).start();                              //Avvio il Thread
+                Thread thr = new Thread(clientHandler);                         //Avvio il Thread
+                thr.setName("CltHnd-" + String.format("%02d", threadCounter));  //do' un nome al thread e il suo counter lo formatto dandogli 2 cifre
+                thr.start();
+                threadCounter++;
             } catch (IOException e) {
                 log.error("Errore durante l'accettazione della connessione", e);
             }

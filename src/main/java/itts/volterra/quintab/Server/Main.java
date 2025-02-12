@@ -14,7 +14,9 @@ public class Main {
 
     public static void main(String[] args){
         try {
-            new Thread(new Server()).start();            //avvio server
+            Thread t = new Thread(new Server());            //avvio server
+            t.setName("Serv-Main");
+            t.start();
         } catch (IOException e) {                        //se lancia eccezione
             log.error("Che palle (RuntimeException): {}", e);   //log
             throw new RuntimeException(e);               //lancio eccezione anch'io perché non mi pagano per far sta roba
