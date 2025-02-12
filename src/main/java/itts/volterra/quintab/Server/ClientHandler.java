@@ -82,7 +82,7 @@ public class ClientHandler implements Runnable {
                             boolean messageOk = true;
                             String decryptedMessage = null;
 
-                            log.debug("Messaggio ricevuto: {}", message);
+                            log.debug("Messaggio ricevuto (grezzo): {}", message);
 
                             //decifra il messaggio
                             try {
@@ -96,7 +96,7 @@ public class ClientHandler implements Runnable {
 
                             //se non ci sono stati errori durante la decriptazione
                             if (messageOk) {
-                                log.info("Messaggio ricevuto (decriptato): {}", decryptedMessage);
+                                log.info("Messaggio ricevuto: {}", decryptedMessage);
 
                                 //elabora il messaggio e invia risposta
                                 //processMessage(decryptedMessage);
@@ -121,14 +121,18 @@ public class ClientHandler implements Runnable {
     }
 
     private void closeConnection() {
-        isRunning = false;
-        try {
-            if (in != null) in.close();
-            if (out != null) out.close();
-            if (socket != null && !socket.isClosed()) socket.close();
-            log.info("Connessione chiusa correttamente");
-        } catch (IOException e) {
-            log.error("Errore durante la chiusura della connessione: ", e);
+        if (isRunning){
+            isRunning = false;
+            try {
+                if (in != null) in.close();
+                if (out != null) out.close();
+                if (socket != null && !socket.isClosed()) socket.close();
+                log.info("Connessione chiusa correttamente");
+            } catch (IOException e) {
+                log.error("Errore durante la chiusura della connessione: ", e);
+            }
+        } else {
+            log.warn("Si è tentato di chiudere la connessione, ma essa è già chiusa");
         }
     }
 
