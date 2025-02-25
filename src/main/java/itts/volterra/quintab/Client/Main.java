@@ -11,7 +11,6 @@ public class Main {
     private static final Logger log = LogManager.getLogger(Main.class);
 
     //todo: vorrei criptare ogni messaggio sfruttando in qualche modo la chiave di DH
-    // e vorrei
     public static void main(String[] args){
         new Thread(new Client()).start();           //avvio client
     }
