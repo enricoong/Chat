@@ -53,7 +53,7 @@ public class Client implements Runnable {
          }
       } while (connecitonResult == 0 && !stop);    //se ritorna codice 0 allora errore e ritento connessione, oppure esco se utente ha deciso di uscire
 
-      if (!stop) {
+      while (!stop) {
          try {
             runDiffieHellmanAlgorithm();
 
@@ -65,9 +65,13 @@ public class Client implements Runnable {
 
             log.debug("Chiave AES: {}", AESKey.hashCode());
 
-            sendMessageToSocket("F-16 palle bagnate");
+            sendMessageToSocket("Ciaoooo");
 
             //continua
+
+            //quando STOP allora...
+            sendMessageToSocket("STOP");
+            stop = true;
          } catch (IOException e) {
             log.error("Errore durante lo scambio Diffie-Hellman", e);
          }
