@@ -27,6 +27,12 @@
             <artifactId>log4j-core</artifactId>
             <version>2.24.1</version>
         </dependency>
+        <!--Supporto connessione database MySQL-->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.33</version>
+        </dependency>
     </dependencies>
 
 </project>
