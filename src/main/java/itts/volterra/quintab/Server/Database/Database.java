@@ -15,46 +15,60 @@ public class Database {
 
    public static void initialize() {
       try (Connection conn = DatabaseConnection.getConnection();
-           Statement stmt = conn.createStatement()) {
+         Statement stmt = conn.createStatement()) {
 
-         //creo tabella Utenti
+         //crea la tabella users (se non esiste)
          String createTableSQL =
-               "CREATE TABLE IF NOT EXISTS Utenti (" +
-                     "username VARCHAR(50) PRIMARY KEY," +
-                     "pwHash VARCHAR(255) NOT NULL," +
-                     "level INT NOT NULL DEFAULT 0" +
+               "CREATE TABLE IF NOT EXISTS `users` (" +
+                     "`ID` int(11) NOT NULL AUTO_INCREMENT, " +
+                     "`username` varchar(24) NOT NULL, " +
+                     "`pwHash` varchar(64) NOT NULL, " +
+                     "`level` int(1) NOT NULL DEFAULT 1, " +
+                     "PRIMARY KEY (`ID`), " +
+                     "UNIQUE KEY `unique-username` (`username`)" +
                      ")";
 
          stmt.execute(createTableSQL);
 
-         log.debug("Tabella Utenti creata con successo");
+         //aggiungo il constraint per il level
+         String constraintSQL =
+               "ALTER TABLE `users` " +
+                     "ADD CONSTRAINT IF NOT EXISTS `level_constraint` CHECK (level >= 1 AND level <= 4)";
 
+         try {
+            stmt.execute(constraintSQL);
+         } catch (SQLException e) {
+            //alcuni database potrebbero non supportare ADD CONSTRAINT IF NOT EXISTS quindi...
+            log.warn("Potrebbe essere già presente il constraint sul level: {}", e.getMessage());
+         }
+
+         log.debug("Tabella users creata con successo");
       } catch (SQLException e) {
          log.error("Errore durante l'inizializzazione del database: {}", e.getMessage());
          e.printStackTrace();
       }
    }
 
-   //Aggiungere utenti di test/default se necessario
+   //aggiungere utenti di test/default se necessario
    public static void addDefaultUsers() {
       try (Connection conn = DatabaseConnection.getConnection();
            Statement stmt = conn.createStatement()) {
 
-         //Inserimento di utenti di esempio (in un'applicazione reale, gli hash sarebbero generati correttamente)
+         //inserimento di utenti di esempio
          String insertUsersSQL = null;
          boolean error = false;
 
-         try{
+         try {
             insertUsersSQL =
-                  "INSERT IGNORE INTO Utenti (username, pwHash, level) VALUES " +
-                        "('admin', " + SHA256.encrypt("amdin") +", 10)," +
-                        "('user', " + SHA256.encrypt("user") + ", 1)";
-         } catch (NoSuchAlgorithmException e){
+                  "INSERT IGNORE INTO `users` (`username`, `pwHash`, `level`) VALUES " +
+                        "('admin', '" + SHA256.encrypt("admin") + "', 4)," +
+                        "('user', '" + SHA256.encrypt("user") + "', 1)";
+         } catch (NoSuchAlgorithmException e) {
             error = true;
             log.error("Errore durante la criptazione dei dati da inserire del database: {}", e.getMessage());
          }
 
-         if(!error){
+         if (!error) {
             stmt.execute(insertUsersSQL);
             log.info("Utenti predefiniti aggiunti con successo");
          } else {
