@@ -6,14 +6,20 @@ import org.apache.logging.log4j.Logger;
 import itts.volterra.quintab.Features.SHA256;
 
 import java.security.NoSuchAlgorithmException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 public class Database {
    private static final Logger log = LogManager.getLogger(Database.class);
+   private static final String DB_NAME = "Chat_Java";
 
+   /**
+    * Inizializza il database: crea il db se non esiste, poi stabilisce una connessione
+    * e crea una tabella e aggiunge degli utenti di default.
+    */
    public static void initialize() {
+      //controllo se esiste e creiamo il database se necessario
+      createDatabaseIfNotExists();
+
       try (Connection conn = DatabaseConnection.getConnection();
          Statement stmt = conn.createStatement()) {
 
@@ -47,9 +53,42 @@ public class Database {
          log.error("Errore durante l'inizializzazione del database: {}", e.getMessage());
          e.printStackTrace();
       }
+
+      addDefaultUsers();
    }
 
-   //aggiungere utenti di test/default se necessario
+   /**
+    * Verifica l'esistenza del database e lo crea se non esiste
+    */
+   private static void createDatabaseIfNotExists() {
+      // Connessione al server MySQL senza specificare un database
+      String url = "jdbc:mysql://localhost:3306/";
+      String user = "root"; // Utente predefinito XAMPP
+      String password = ""; // Password predefinita XAMPP
+
+      try (Connection conn = DriverManager.getConnection(url, user, password)) {
+         Statement stmt = conn.createStatement();
+
+         // Verifico se il database esiste
+         ResultSet resultSet = stmt.executeQuery(
+               "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '" + DB_NAME + "'");
+
+         if (!resultSet.next()) {
+            // Il database non esiste, lo creo
+            stmt.executeUpdate("CREATE DATABASE " + DB_NAME);
+            log.info("Database {} creato con successo", DB_NAME);
+         } else {
+            log.info("Database {} già esistente", DB_NAME);
+         }
+      } catch (SQLException e) {
+         log.error("Errore durante la verifica/creazione del database: {}", e.getMessage());
+         e.printStackTrace();
+      }
+   }
+
+   /**
+    * Aggiunge utenti default ('admin' e 'user')
+    */
    public static void addDefaultUsers() {
       try (Connection conn = DatabaseConnection.getConnection();
            Statement stmt = conn.createStatement()) {
