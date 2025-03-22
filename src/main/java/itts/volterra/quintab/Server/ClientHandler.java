@@ -32,6 +32,8 @@ public class ClientHandler implements Runnable {
     private BigInteger sharedKey;
     private SecretKey AESKey;
     private volatile boolean isRunning = true;
+    private String tempUsername;    //salvo temporaneamente lo username con cui il client sta cercando di accedere
+    private String currentUser = null;  //salvo il nome dello username loggato (se presente)
 
     /**
      * Costruttore
@@ -97,9 +99,8 @@ public class ClientHandler implements Runnable {
 
                             //se non ci sono stati errori durante la decriptazione
                             if (messageOk) {
-                                log.info("Messaggio ricevuto: {}", decryptedMessage);
+                                log.debug("Messaggio ricevuto: {}", decryptedMessage);
 
-                                //temporaneo:
                                 if (decryptedMessage.equalsIgnoreCase("STOP")){
                                     stop = true;
                                     closeConnection();
@@ -188,15 +189,32 @@ public class ClientHandler implements Runnable {
     }
 
     private void processMessage(String message) {
-        if (message.startsWith("USRNM-")) {
-            //il client ha inviato uno username
-            if (Database.usernameExists(message.substring(6))){
-               log.info("Username '{}' trovato nel database", message.substring(6));
-            } else {
-               log.info("Lo username '{}' non è presente nel database", message.substring(6));
+        if (currentUser == null) {
+            //al momento non è loggato alcun utente
+            if (message.startsWith("USRNM-")) {
+                //il client ha inviato uno username
+                if (Database.usernameExists(message.substring(6))){
+                    tempUsername = message.substring(6); //salvo temporaneamente lo username
+                    log.info("Username '{}' trovato nel database", message.substring(6));
+                    out.println("USERNAME-OK");  //invio messaggio ok al client
+                } else {
+                    log.info("Lo username '{}' non è presente nel database", message.substring(6));
+                    out.println("USERNAME-NOTFOUND");    //invio messaggio notfound al client
+                }
+            } else if (message.startsWith("PSSWD-")) {
+                String pwHash = Database.getPasswordHash(tempUsername);
+                if (pwHash != null && pwHash.equals(message.substring(6))){
+                    //la password ricevuta è corretta
+                    log.info("La password ricevuta dal client è corretta");
+                    out.println("PASSWORD-OK");
+                }
+                //controllo se la password inserita corrisponde a quella dell'utente selezionato
             }
-        } else if (message.startsWith("PSSWD-")) {
+        } else {
+            //c'è già un utente loggato
 
+            //temp:
+            log.info("Messaggio ricevuto: {}", message);
         }
     }
 

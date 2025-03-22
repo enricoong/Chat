@@ -1,6 +1,7 @@
 package itts.volterra.quintab.Client;
 
 import itts.volterra.quintab.Features.AES;
+import itts.volterra.quintab.Features.SHA256;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -11,6 +12,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.net.*;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Scanner;
 
@@ -98,7 +100,30 @@ public class Client implements Runnable {
 
       String line;
       while ((line = in.readLine()) != null) {
+         if (line.equalsIgnoreCase("USERNAME-OK")) {
+            //lo username esiste nel database
+            log.debug("Lo username inserito è presente nel database");
 
+            System.out.print("Inserisci la password: ");
+            String pwHash = null;
+            try {
+               pwHash = SHA256.encrypt(kbInput.nextLine().trim());  //acquisisco input
+            } catch (NoSuchAlgorithmException e) {
+               log.error("errore durante la criptazione della password", e);
+            }
+
+            sendMessageToServer("PSSWD-" + pwHash);
+            break;
+         }
+      }
+
+      //ora che lo username va bene e ho inviato la password devo sapere se è corretta
+      line = null;
+      while ((line = in.readLine()) != null){
+         if (line.equalsIgnoreCase("PASSWORD-OK")){
+            //la password era corretta
+            log.info("Password corretta");
+         }
       }
    }
 

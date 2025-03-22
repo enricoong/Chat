@@ -152,4 +152,33 @@ public class Database {
       //in caso di errore
       return false;
    }
+
+   /**
+    * Recupera l'hash della password per un determinato username
+    *
+    * @param username Username dell'utente
+    * @return La stringa contenente il pwHash o null se l'utente non esiste
+    */
+   public static String getPasswordHash(String username) {
+      try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement pstmt = conn.prepareStatement("SELECT pwHash FROM users WHERE username = ?")) {
+
+         //passo il parametro username
+         pstmt.setString(1, username);
+
+         //eseguo la query
+         ResultSet rs = pstmt.executeQuery();
+
+         //verifico se è stato trovato un risultato
+         if (rs.next()) {
+            //restituisco pwHash
+            return rs.getString("pwHash");
+         }
+      } catch (SQLException e) {
+         log.error("Errore durante il recupero dell'hash della password: {}", e.getMessage());
+      }
+
+      //nessun risultato trovato o errore
+      return null;
+   }
 }
