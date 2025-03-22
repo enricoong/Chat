@@ -31,12 +31,6 @@ public class Client implements Runnable {
 
    @Override
    public void run() {
-      try {
-         Thread.sleep(500);    //sleep perché il messaggio in console appaia senza essere in mezzo ad altre righe
-      } catch (InterruptedException e) {
-         log.warn("Il Thread è stato interrotto durante lo sleep");
-      }
-
       int connecitonResult = 0;
       boolean stop = false;
 
@@ -54,6 +48,7 @@ public class Client implements Runnable {
       } while (connecitonResult == 0 && !stop);    //se ritorna codice 0 allora errore e ritento connessione, oppure esco se utente ha deciso di uscire
 
       while (!stop) {
+         //scambio Diffie-Hellman
          try {
             runDiffieHellmanAlgorithm();
 
@@ -62,23 +57,49 @@ public class Client implements Runnable {
             log.debug("AES key algorithm: {}", AESKey.getAlgorithm());
             log.debug("AES key format: {}", AESKey.getFormat());
             log.debug("AES key encoded length: {}", AESKey.getEncoded().length);
-
             log.debug("Chiave AES: {}", AESKey.hashCode());
-
-            sendMessageToSocket("Ciaoooo");
-
-            //continua
-
-            //quando STOP allora...
-            sendMessageToSocket("STOP");
-            stop = true;
          } catch (IOException e) {
             log.error("Errore durante lo scambio Diffie-Hellman", e);
          }
+
+         //autenticazione
+         try {
+            authenticate();
+         } catch (IOException e) {
+            log.error("Errore durante l'autenticazione", e);
+         }
+
+         //comunicazione
+         sendMessageToServer("Ciaoooo");
+
+         //STOP e chiudo connessione
+         sendMessageToServer("STOP");
+         stop = true;
       }
 
+      try {
+         in.close();
+      } catch (IOException e) {
+         log.error("Errore durante la chiusura del Reader", e);
+      }
+      out.close();
       kbInput.close();                    //chiudo scanner
       Thread.currentThread().interrupt(); //fermo thread
+   }
+
+   /**
+    * Il client si identifica e viene autenticato dal server
+    */
+   private void authenticate() throws IOException {
+      System.out.print("Inserisci il tuo username: ");
+      String username = kbInput.nextLine().trim();  //acquisisco input
+      log.info("Username inserito: '{}'", username);
+      sendMessageToServer(username);   //invio username al server
+
+      String line;
+      while ((line = in.readLine()) != null) {
+
+      }
    }
 
    /**
@@ -104,7 +125,7 @@ public class Client implements Runnable {
       }
    }
 
-   private void sendMessageToSocket(String message) {
+   private void sendMessageToServer(String message) {
       if (AESKey.isDestroyed()){
          log.warn("Non è stato possibile inviare il messaggio perché la chiave AES è stata distrutta");
          return;

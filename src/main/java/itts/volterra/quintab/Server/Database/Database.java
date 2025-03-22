@@ -48,7 +48,7 @@ public class Database {
             log.warn("Potrebbe essere già presente il constraint sul level: {}", e.getMessage());
          }
 
-         log.debug("Tabella users creata con successo");
+         log.debug("Tabella users -> OK");
       } catch (SQLException e) {
          log.error("Errore durante l'inizializzazione del database: {}", e.getMessage());
          e.printStackTrace();
@@ -63,18 +63,18 @@ public class Database {
    private static void createDatabaseIfNotExists() {
       // Connessione al server MySQL senza specificare un database
       String url = "jdbc:mysql://localhost:3306/";
-      String user = "root"; // Utente predefinito XAMPP
-      String password = ""; // Password predefinita XAMPP
+      String user = "root"; //utente predefinito XAMPP
+      String password = ""; //password predefinita XAMPP
 
       try (Connection conn = DriverManager.getConnection(url, user, password)) {
          Statement stmt = conn.createStatement();
 
-         // Verifico se il database esiste
+         //verifico se il database esiste
          ResultSet resultSet = stmt.executeQuery(
                "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '" + DB_NAME + "'");
 
          if (!resultSet.next()) {
-            // Il database non esiste, lo creo
+            //il database non esiste, lo creo
             stmt.executeUpdate("CREATE DATABASE " + DB_NAME);
             log.info("Database {} creato con successo", DB_NAME);
          } else {
@@ -109,7 +109,7 @@ public class Database {
 
          if (!error) {
             stmt.execute(insertUsersSQL);
-            log.info("Utenti predefiniti aggiunti con successo");
+            log.debug("Utenti predefiniti -> OK");
          } else {
             log.warn("Errore durante l'aggiunta degli utenti predefiniti");
          }
