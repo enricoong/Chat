@@ -203,12 +203,17 @@ public class ClientHandler implements Runnable {
                 }
             } else if (message.startsWith("PSSWD-")) {
                 String pwHash = Database.getPasswordHash(tempUsername);
+
+                //controllo se la password inserita corrisponde a quella dell'utente selezionato
                 if (pwHash != null && pwHash.equals(message.substring(6))){
                     //la password ricevuta è corretta
                     log.info("La password ricevuta dal client è corretta");
                     out.println("PASSWORD-OK");
+                } else {
+                    //la password non è corretta
+                    log.info("La password ricevuta dal client è errata");
+                    out.println("PASSWORD-WRONG");
                 }
-                //controllo se la password inserita corrisponde a quella dell'utente selezionato
             }
         } else {
             //c'è già un utente loggato

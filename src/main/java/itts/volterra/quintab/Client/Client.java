@@ -123,6 +123,9 @@ public class Client implements Runnable {
          if (line.equalsIgnoreCase("PASSWORD-OK")){
             //la password era corretta
             log.info("Password corretta");
+         } else if (line.equalsIgnoreCase("PASSWORD-WRONG")) {
+            //la password era errata
+            log.info("Password errata");
          }
       }
    }
