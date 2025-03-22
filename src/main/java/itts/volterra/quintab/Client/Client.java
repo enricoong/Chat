@@ -31,6 +31,9 @@ public class Client implements Runnable {
    private BigInteger sharedKey;
    private SecretKey AESKey;
 
+   //autenticazione
+   String loggedUser = null;
+
    @Override
    public void run() {
       int connecitonResult = 0;
@@ -93,41 +96,53 @@ public class Client implements Runnable {
     * Il client si identifica e viene autenticato dal server
     */
    private void authenticate() throws IOException {
-      System.out.print("Inserisci il tuo username: ");
-      String username = kbInput.nextLine().trim();  //acquisisco input
-      log.info("Username inserito: '{}'", username);
-      sendMessageToServer("USRNM-" + username);   //invio username al server
+      boolean authenticated = false;
+      String username = null;
+      while (!authenticated) {
+         System.out.print("Inserisci il tuo username: ");
+         username = kbInput.nextLine().trim();  //acquisisco input
+         log.info("Username inserito: '{}'", username);
+         sendMessageToServer("USRNM-" + username);   //invio username al server
 
-      String line;
-      while ((line = in.readLine()) != null) {
-         if (line.equalsIgnoreCase("USERNAME-OK")) {
-            //lo username esiste nel database
-            log.debug("Lo username inserito è presente nel database");
+         String line;
+         while ((line = in.readLine()) != null) {
+            if (line.equalsIgnoreCase("USERNAME-OK")) {
+               //lo username esiste nel database
+               log.debug("Lo username inserito è presente nel database");
 
-            System.out.print("Inserisci la password: ");
-            String pwHash = null;
-            try {
-               pwHash = SHA256.encrypt(kbInput.nextLine().trim());  //acquisisco input
-            } catch (NoSuchAlgorithmException e) {
-               log.error("errore durante la criptazione della password", e);
+               System.out.print("Inserisci la password: ");
+               String pwHash = null;
+               try {
+                  pwHash = SHA256.encrypt(kbInput.nextLine().trim());  //acquisisco input
+               } catch (NoSuchAlgorithmException e) {
+                  log.error("errore durante la criptazione della password", e);
+               }
+
+               sendMessageToServer("PSSWD-" + pwHash);
+               break;
+            } else {
+               //TODO caso in cui lo username non ci sia
             }
+         }
 
-            sendMessageToServer("PSSWD-" + pwHash);
-            break;
+         //ora che lo username va bene e ho inviato la password devo sapere se è corretta
+         line = null;
+         while ((line = in.readLine()) != null){
+            if (line.equalsIgnoreCase("PASSWORD-OK")){
+               //la password era corretta
+               log.info("Password corretta");
+               authenticated = true;   //flag autenticato
+            } else if (line.equalsIgnoreCase("PASSWORD-WRONG")) {
+               //la password era errata
+               log.info("Password errata, ricomincio autenticazione");
+               break;
+               //essendo il flag 'authenticated' ancora falso, ricomincia il ciclo iniziale
+            }
          }
       }
 
-      //ora che lo username va bene e ho inviato la password devo sapere se è corretta
-      line = null;
-      while ((line = in.readLine()) != null){
-         if (line.equalsIgnoreCase("PASSWORD-OK")){
-            //la password era corretta
-            log.info("Password corretta");
-         } else if (line.equalsIgnoreCase("PASSWORD-WRONG")) {
-            //la password era errata
-            log.info("Password errata");
-         }
-      }
+      //autenticazione completata
+      loggedUser = username;
    }
 
    /**

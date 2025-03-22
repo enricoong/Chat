@@ -191,6 +191,7 @@ public class ClientHandler implements Runnable {
     private void processMessage(String message) {
         if (currentUser == null) {
             //al momento non è loggato alcun utente
+
             if (message.startsWith("USRNM-")) {
                 //il client ha inviato uno username
                 if (Database.usernameExists(message.substring(6))){
@@ -209,6 +210,8 @@ public class ClientHandler implements Runnable {
                     //la password ricevuta è corretta
                     log.info("La password ricevuta dal client è corretta");
                     out.println("PASSWORD-OK");
+                    currentUser = tempUsername; //imposto utente loggato
+                    tempUsername = null;    //azzero utente temporaneo
                 } else {
                     //la password non è corretta
                     log.info("La password ricevuta dal client è errata");
