@@ -1,6 +1,7 @@
 package itts.volterra.quintab.Server;
 
 import itts.volterra.quintab.Features.AES;
+import itts.volterra.quintab.Server.Database.Database;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -98,13 +99,13 @@ public class ClientHandler implements Runnable {
                             if (messageOk) {
                                 log.info("Messaggio ricevuto: {}", decryptedMessage);
 
-                                //elabora il messaggio e invia risposta
-                                //processMessage(decryptedMessage);
-
                                 //temporaneo:
                                 if (decryptedMessage.equalsIgnoreCase("STOP")){
                                     stop = true;
                                     closeConnection();
+                                } else {
+                                    //elabora il messaggio e invia risposta
+                                    processMessage(decryptedMessage);
                                 }
                             }
                         }
@@ -183,6 +184,19 @@ public class ClientHandler implements Runnable {
 
             // Invia conferma
             out.println("DH-COMPLETE");
+        }
+    }
+
+    private void processMessage(String message) {
+        if (message.startsWith("USRNM-")) {
+            //il client ha inviato uno username
+            if (Database.usernameExists(message.substring(6))){
+               log.info("Username '{}' trovato nel database", message.substring(6));
+            } else {
+               log.info("Lo username '{}' non è presente nel database", message.substring(6));
+            }
+        } else if (message.startsWith("PSSWD-")) {
+
         }
     }
 

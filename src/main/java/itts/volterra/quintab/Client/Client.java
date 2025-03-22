@@ -94,7 +94,7 @@ public class Client implements Runnable {
       System.out.print("Inserisci il tuo username: ");
       String username = kbInput.nextLine().trim();  //acquisisco input
       log.info("Username inserito: '{}'", username);
-      sendMessageToServer(username);   //invio username al server
+      sendMessageToServer("USRNM-" + username);   //invio username al server
 
       String line;
       while ((line = in.readLine()) != null) {

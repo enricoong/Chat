@@ -91,7 +91,7 @@ public class Database {
     */
    public static void addDefaultUsers() {
       try (Connection conn = DatabaseConnection.getConnection();
-           Statement stmt = conn.createStatement()) {
+         Statement stmt = conn.createStatement()) {
 
          //inserimento di utenti di esempio
          String insertUsersSQL = null;
@@ -118,5 +118,38 @@ public class Database {
          log.error("Errore durante l'aggiunta degli utenti: {}", e.getMessage());
          e.printStackTrace();
       }
+   }
+
+   /**
+    * Controlla se uno username è presente nel database
+    *
+    * @param username username da controllare
+    * @return True - Esiste lo username | False - Non esiste lo username
+    */
+   public static boolean usernameExists(String username) {
+      try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(*) AS count FROM users WHERE username = ?")) {
+
+         //passo il parametro username
+         pstmt.setString(1, username);
+
+         //eseguo la query col parametro impostato
+         ResultSet rs = pstmt.executeQuery();
+
+         //scorro i risultati della query
+         if (rs.next()) {
+            //leggo il valore del conteggio
+            int count = rs.getInt("count");
+
+            //restituisco true se count > 0
+            return count > 0;
+         }
+      } catch (SQLException e) {
+         log.error("Errore durante il controllo sull'esistenza dell'utente: {}", e.getMessage());
+         e.printStackTrace();
+      }
+
+      //in caso di errore
+      return false;
    }
 }
