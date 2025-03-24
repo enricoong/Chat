@@ -4,8 +4,12 @@
 name: Maven Package
 
 on:
-  release:
-    types: [created]
+  push:
+    branches:
+      - master
+    paths:
+      - '**/*.java'
+      - '**/pom.xml'
 
 jobs:
   build:
