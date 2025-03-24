@@ -74,7 +74,7 @@ public class ClientHandler implements Runnable {
                 AESKey = AES.generateKeyForAES(sharedKey);
                 log.debug("AES key format: {}", AESKey.getFormat());
                 log.debug("AES key encoded length: {}", AESKey.getEncoded().length);
-                log.debug("Hash della chiave AES: {}", AESKey.hashCode());
+                log.debug("Chiave AES: {}", AESKey.hashCode());
 
                 while (isRunning && !socket.isClosed()) {
                     String message = "EMPTY_MESSAGE";
