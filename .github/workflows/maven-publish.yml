@@ -26,6 +26,18 @@ jobs:
           server-id: github
           cache: maven
 
+      - name: Create settings.xml
+        uses: whelk-io/maven-settings-xml-action@v22
+        with:
+          servers: |
+            [
+              {
+                "id": "github",
+                "username": "${{ github.actor }}",
+                "password": "${{ secrets.GITHUB_TOKEN }}"
+              }
+            ]
+
       - name: Build with Maven
         run: mvn -B clean package
 
@@ -33,8 +45,7 @@ jobs:
         run: |
           mvn -B deploy \
           -DskipTests \
-          -Dgithub.repository=enricoong/Chat \
-          -Dregistry=https://maven.pkg.github.com/enricoong/Chat
+          -Dmaven.deploy.skip=javadoc
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
