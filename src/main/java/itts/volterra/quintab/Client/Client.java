@@ -171,6 +171,11 @@ public class Client implements Runnable {
       }
    }
 
+   /**
+    * Invia un messaggio al server
+    *
+    * @param message Messaggio
+    */
    private void sendMessageToServer(String message) {
       if (AESKey.isDestroyed()){
          log.warn("Non è stato possibile inviare il messaggio perché la chiave AES è stata distrutta");
@@ -191,10 +196,22 @@ public class Client implements Runnable {
       //out.close();                    //chiudo stream
    }
 
+   /**
+    * Inizializza il BufferedReader per poter ricevere messaggi dal server
+    *
+    * @param socket Server
+    * @return BufferedReader del server
+    */
    private BufferedReader initializeReader(Socket socket) throws IOException {
       return new BufferedReader(new InputStreamReader(socket.getInputStream()));
    }
 
+   /**
+    * Inizializza il PrintWriter per poter ricevere messaggi dal server
+    *
+    * @param socket Server
+    * @return PrintWriter del server
+    */
    private PrintWriter initializeWriter(Socket socket) throws IOException {
       return new PrintWriter(socket.getOutputStream(), true);
    }
