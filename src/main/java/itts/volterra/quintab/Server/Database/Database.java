@@ -11,15 +11,100 @@ import java.sql.*;
 public class Database {
    private static final Logger log = LogManager.getLogger(Database.class);
    private static final String DB_NAME = "Chat_Java";
+   private static boolean dbOk;
 
    /**
     * Inizializza il database: crea il db se non esiste, poi stabilisce una connessione
     * e crea una tabella e aggiunge degli utenti di default.
+    *
+    * @return True se l'inizializzazione è andata a buon fine, altrimenti False
     */
-   public static void initialize() {
+   public static boolean initialize() {
       //controllo se esiste e creiamo il database se necessario
-      createDatabaseIfNotExists();
+      dbOk = createDatabaseIfNotExists();
 
+      if (dbOk) {
+         try {
+            addUserTable();
+         } catch (SQLException e) {
+            log.error("Errore durante l'inizializzazione del database", e);
+         }
+
+         addDefaultUsers();
+
+         return true;
+      } else {
+         return false;
+      }
+   }
+
+   /**
+    * Verifica l'esistenza del database e lo crea se non esiste
+    *
+    * @return True se il database esiste/è stato creato | False se errore
+    */
+   private static boolean createDatabaseIfNotExists() {
+      // Connessione al server MySQL senza specificare un database
+      String url = "jdbc:mysql://localhost:3306/";
+      String user = "root"; //utente predefinito XAMPP
+      String password = ""; //password predefinita XAMPP
+
+      try (Connection conn = DriverManager.getConnection(url, user, password)) {
+         Statement stmt = conn.createStatement();
+
+         //verifico se il database esiste
+         ResultSet resultSet = stmt.executeQuery(
+               "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '" + DB_NAME + "'");
+
+         if (!resultSet.next()) {
+            //il database non esiste, lo creo
+            stmt.executeUpdate("CREATE DATABASE " + DB_NAME);
+            log.info("Database {} creato con successo", DB_NAME);
+         } else {
+            log.info("Database {} già esistente", DB_NAME);
+         }
+
+         return true;
+      } catch (SQLException e) {
+         log.error("Errore durante la verifica/creazione del database: {}", e.getMessage());
+         return false;
+      }
+   }
+
+   /**
+    * Aggiunge utenti default ('admin' e 'user')
+    */
+   private static void addDefaultUsers() {
+      try (Connection conn = DatabaseConnection.getConnection();
+         Statement stmt = conn.createStatement()) {
+
+         //inserimento di utenti di esempio
+         String insertUsersSQL = null;
+         boolean error = false;
+
+         try {
+            insertUsersSQL =
+                  "INSERT IGNORE INTO `users` (`username`, `pwHash`, `level`) VALUES " +
+                        "('admin', '" + SHA256.encrypt("admin") + "', 4)," +
+                        "('user', '" + SHA256.encrypt("user") + "', 1)";
+         } catch (NoSuchAlgorithmException e) {
+            error = true;
+            log.error("Errore durante la criptazione dei dati da inserire del database: {}", e.getMessage());
+         }
+
+         if (!error) {
+            stmt.execute(insertUsersSQL);
+            log.debug("Utenti predefiniti -> OK");
+         } else {
+            log.warn("Errore durante l'aggiunta degli utenti predefiniti");
+         }
+
+      } catch (SQLException e) {
+         log.error("Errore durante l'aggiunta degli utenti: {}", e.getMessage());
+      }
+   }
+
+   private static void addUserTable() throws SQLException {
       try (Connection conn = DatabaseConnection.getConnection();
          Statement stmt = conn.createStatement()) {
 
@@ -49,74 +134,6 @@ public class Database {
          }
 
          log.debug("Tabella users -> OK");
-      } catch (SQLException e) {
-         log.error("Errore durante l'inizializzazione del database: {}", e.getMessage());
-         e.printStackTrace();
-      }
-
-      addDefaultUsers();
-   }
-
-   /**
-    * Verifica l'esistenza del database e lo crea se non esiste
-    */
-   private static void createDatabaseIfNotExists() {
-      // Connessione al server MySQL senza specificare un database
-      String url = "jdbc:mysql://localhost:3306/";
-      String user = "root"; //utente predefinito XAMPP
-      String password = ""; //password predefinita XAMPP
-
-      try (Connection conn = DriverManager.getConnection(url, user, password)) {
-         Statement stmt = conn.createStatement();
-
-         //verifico se il database esiste
-         ResultSet resultSet = stmt.executeQuery(
-               "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '" + DB_NAME + "'");
-
-         if (!resultSet.next()) {
-            //il database non esiste, lo creo
-            stmt.executeUpdate("CREATE DATABASE " + DB_NAME);
-            log.info("Database {} creato con successo", DB_NAME);
-         } else {
-            log.info("Database {} già esistente", DB_NAME);
-         }
-      } catch (SQLException e) {
-         log.error("Errore durante la verifica/creazione del database: {}", e.getMessage());
-         e.printStackTrace();
-      }
-   }
-
-   /**
-    * Aggiunge utenti default ('admin' e 'user')
-    */
-   public static void addDefaultUsers() {
-      try (Connection conn = DatabaseConnection.getConnection();
-         Statement stmt = conn.createStatement()) {
-
-         //inserimento di utenti di esempio
-         String insertUsersSQL = null;
-         boolean error = false;
-
-         try {
-            insertUsersSQL =
-                  "INSERT IGNORE INTO `users` (`username`, `pwHash`, `level`) VALUES " +
-                        "('admin', '" + SHA256.encrypt("admin") + "', 4)," +
-                        "('user', '" + SHA256.encrypt("user") + "', 1)";
-         } catch (NoSuchAlgorithmException e) {
-            error = true;
-            log.error("Errore durante la criptazione dei dati da inserire del database: {}", e.getMessage());
-         }
-
-         if (!error) {
-            stmt.execute(insertUsersSQL);
-            log.debug("Utenti predefiniti -> OK");
-         } else {
-            log.warn("Errore durante l'aggiunta degli utenti predefiniti");
-         }
-
-      } catch (SQLException e) {
-         log.error("Errore durante l'aggiunta degli utenti: {}", e.getMessage());
-         e.printStackTrace();
       }
    }
 
@@ -146,7 +163,6 @@ public class Database {
          }
       } catch (SQLException e) {
          log.error("Errore durante il controllo sull'esistenza dell'utente: {}", e.getMessage());
-         e.printStackTrace();
       }
 
       //in caso di errore

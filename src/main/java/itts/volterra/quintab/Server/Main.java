@@ -19,17 +19,19 @@ public class Main {
     // salvarsi i messaggi della chat, eventuali metadati (es.: conferme di lettura),
     // o anche un audit log dei comandi
     public static void main(String[] args){
-        //mi collego al database e lo inizializzo
-        Database.initialize();
-
-        //avvio il Thread del server
-        try {
-            Thread t = new Thread(new Server());            //avvio server
-            t.setName("Serv-Main");
-            t.start();
-        } catch (IOException e) {                        //se lancia eccezione
-            log.error("Che palle (RuntimeException): {}", e);   //log
-            throw new RuntimeException(e);               //lancio eccezione anch'io perché non mi pagano per far sta roba
+        //mi collego al database e lo inizializzo, e se va tutto a buon fine proseguo
+        if (Database.initialize()){
+            //avvio il Thread del server
+            try {
+                Thread t = new Thread(new Server());            //avvio server
+                t.setName("Serv-Main");
+                t.start();
+            } catch (IOException e) {                        //se lancia eccezione
+                log.error("Che palle (RuntimeException): {}", e);   //log
+                throw new RuntimeException(e);               //lancio eccezione anch'io perché non mi pagano per far sta roba
+            }
+        } else {
+            log.error("Il server non è stato avviato a causa di un errore riguardante il database");
         }
     }
 }

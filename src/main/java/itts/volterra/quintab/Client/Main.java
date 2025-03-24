@@ -10,7 +10,6 @@ import org.apache.logging.log4j.Logger;
 public class Main {
     private static final Logger log = LogManager.getLogger(Main.class);
 
-    //todo: vorrei criptare ogni messaggio sfruttando in qualche modo la chiave di DH
     public static void main(String[] args){
         new Thread(new Client()).start();           //avvio client
     }

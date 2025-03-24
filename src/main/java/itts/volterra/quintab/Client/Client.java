@@ -21,7 +21,7 @@ public class Client implements Runnable {
    private static final Logger log = LogManager.getLogger(Client.class);
    private BufferedReader in;
    private PrintWriter out;
-   private Scanner kbInput = new Scanner(System.in);
+   private final Scanner kbInput = new Scanner(System.in);
    private Socket server;
 
    //parametri Diffie-Hellman
@@ -96,7 +96,7 @@ public class Client implements Runnable {
     * Il client si identifica e viene autenticato dal server
     */
    private void authenticate() throws IOException {
-      boolean authenticated = false;
+      boolean authenticated = false, usernameInDatabase = false;
       String username = null;
       while (!authenticated) {
          System.out.print("Inserisci il tuo username: ");
@@ -108,6 +108,7 @@ public class Client implements Runnable {
          while ((line = in.readLine()) != null) {
             if (line.equalsIgnoreCase("USERNAME-OK")) {
                //lo username esiste nel database
+               usernameInDatabase = true;
                log.debug("Lo username inserito è presente nel database");
 
                System.out.print("Inserisci la password: ");
@@ -121,13 +122,15 @@ public class Client implements Runnable {
                sendMessageToServer("PSSWD-" + pwHash);
                break;
             } else {
-               //TODO caso in cui lo username non ci sia
+               log.info("Lo username inserito non è presente nel database, riprova");
+               break;
+               //essendo il flag 'authenticated' ancora falso, ricomincia
             }
          }
 
-         //ora che lo username va bene e ho inviato la password devo sapere se è corretta
+         //se lo username va bene e ho inviato la password devo sapere se è corretta
          line = null;
-         while ((line = in.readLine()) != null){
+         while ((line = in.readLine()) != null && usernameInDatabase) {
             if (line.equalsIgnoreCase("PASSWORD-OK")){
                //la password era corretta
                log.info("Password corretta");
