@@ -14,10 +14,8 @@ public class Main {
     private static final Logger log = LogManager.getLogger(Main.class);
 
 
-    //todo: voglio creare un database che mi salvi al suo interno gli utenti
-    // e la password e i permessi del relativo utente. Il database inoltre dovrà
-    // salvarsi i messaggi della chat, eventuali metadati (es.: conferme di lettura),
-    // o anche un audit log dei comandi
+    //todo: Il database inoltre dovrà salvarsi i messaggi della chat
+    // eventuali metadati (es.: conferme di lettura), o anche un audit log dei comandi
     public static void main(String[] args){
         //mi collego al database e lo inizializzo, e se va tutto a buon fine proseguo
         if (Database.initialize()){
