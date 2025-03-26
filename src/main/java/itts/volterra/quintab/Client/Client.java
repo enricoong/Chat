@@ -109,7 +109,7 @@ public class Client implements Runnable {
             if (line.equalsIgnoreCase("USERNAME-OK")) {
                //lo username esiste nel database
                usernameInDatabase = true;
-               log.debug("Lo username inserito è presente nel database");
+               log.info("Lo username inserito è presente nel database");
 
                System.out.print("Inserisci la password: ");
                String pwHash = null;
@@ -282,7 +282,7 @@ public class Client implements Runnable {
             out.println("DH-CLIENT_PUBLIC--" + clientPublicKey);        //invio chiave pubblica al server
 
             sharedKey = serverPublicKey.modPow(clientPrivateKey, P);    //calcola chiave condivisa
-            log.info("Chiave condivisa calcolata: {}", sharedKey);
+            log.debug("Chiave condivisa calcolata: {}", sharedKey);
             break;                                                              //esco dall'if
          } else if (line.equals("DH-COMPLETE")) {
             log.info("Scambio Diffie-Hellman completato");

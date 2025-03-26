@@ -181,7 +181,7 @@ public class ClientHandler implements Runnable {
 
             //calcolo la chiave condivisa
             sharedKey = clientPublicKey.modPow(serverPrivateKey, DEFAULT_P);
-            log.info("Chiave condivisa calcolata: {}", sharedKey);
+            log.debug("Chiave condivisa calcolata: {}", sharedKey);
 
             // Invia conferma
             out.println("DH-COMPLETE");
@@ -196,10 +196,10 @@ public class ClientHandler implements Runnable {
                 //il client ha inviato uno username
                 if (Database.usernameExists(message.substring(6))){
                     tempUsername = message.substring(6); //salvo temporaneamente lo username
-                    log.info("Username '{}' trovato nel database", message.substring(6));
+                    log.info("Cercato username '{}': trovato nel database", message.substring(6));
                     out.println("USERNAME-OK");  //invio messaggio ok al client
                 } else {
-                    log.info("Lo username '{}' non è presente nel database", message.substring(6));
+                    log.info("Cercato username '{}': non è presente nel database", message.substring(6));
                     out.println("USERNAME-NOTFOUND");    //invio messaggio notfound al client
                 }
             } else if (message.startsWith("PSSWD-")) {
