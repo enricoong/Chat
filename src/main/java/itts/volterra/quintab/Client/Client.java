@@ -106,6 +106,7 @@ public class Client implements Runnable {
 
          String line;
          while ((line = in.readLine()) != null) {
+            log.debug("Messaggio ricevuto: {}", line);
             if (line.equalsIgnoreCase("USERNAME-OK")) {
                //lo username esiste nel database
                usernameInDatabase = true;
@@ -283,7 +284,6 @@ public class Client implements Runnable {
 
             sharedKey = serverPublicKey.modPow(clientPrivateKey, P);    //calcola chiave condivisa
             log.debug("Chiave condivisa calcolata: {}", sharedKey);
-            break;                                                              //esco dall'if
          } else if (line.equals("DH-COMPLETE")) {
             log.info("Scambio Diffie-Hellman completato");
             break;
