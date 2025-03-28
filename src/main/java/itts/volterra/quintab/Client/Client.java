@@ -108,10 +108,17 @@ public class Client implements Runnable {
          }
 
          String line;
-         while ((line = in.readLine()) == null){/*wait for a message*/}
+         while ((line = in.readLine()) == null){
+            /*wait for a message todo: better thread management*/
+            try {
+               Thread.sleep(100);  //per evitare il busy-waiting
+            } catch (InterruptedException e) {
+               Thread.currentThread().interrupt();
+               log.error("Thread interrotto durante l'attesa del messaggio", e);
+            }
+         }
          log.debug("Messaggio ricevuto: {}", line);
 
-         //todo: riorganizzo tutto con switch-case
          switch (line) {
             case "USERNAME-OK":{
                //lo username esiste nel database
@@ -143,6 +150,8 @@ public class Client implements Runnable {
                   //la password era corretta
                   log.info("Password corretta");
                   authenticated = true;   //flag autenticato
+               } else {
+                  log.error("Non dovresti ricevere questo messaggio senza aver inserito prima uno username");
                }
 
                usernameInDatabase = false;
