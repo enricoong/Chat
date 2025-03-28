@@ -99,15 +99,21 @@ public class Client implements Runnable {
       boolean authenticated = false, usernameInDatabase = false;
       String username = null;
       while (!authenticated) {
-         System.out.print("Inserisci il tuo username: ");
-         username = kbInput.nextLine().trim();  //acquisisco input
-         log.info("Username inserito: '{}'", username);
-         sendMessageToServer("USRNM-" + username);   //invio username al server
+         //TODO: dopo che non trova lo username o la passowrd, non torna qui
+         if (!usernameInDatabase) {
+            System.out.print("Inserisci il tuo username: ");
+            username = kbInput.nextLine().trim();  //acquisisco input
+            log.info("Username inserito: '{}'", username);
+            sendMessageToServer("USRNM-" + username);   //invio username al server
+         }
 
          String line;
-         while ((line = in.readLine()) != null) {
-            log.debug("Messaggio ricevuto: {}", line);
-            if (line.equalsIgnoreCase("USERNAME-OK")) {
+         while ((line = in.readLine()) == null){/*wait for a message*/}
+         log.debug("Messaggio ricevuto: {}", line);
+
+         //todo: riorganizzo tutto con switch-case
+         switch (line) {
+            case "USERNAME-OK":{
                //lo username esiste nel database
                usernameInDatabase = true;
                log.info("Lo username inserito è presente nel database");
@@ -121,26 +127,46 @@ public class Client implements Runnable {
                }
 
                sendMessageToServer("PSSWD-" + pwHash);
-               break;
-            } else {
-               log.info("Lo username inserito non è presente nel database, riprova");
-               break;
-               //essendo il flag 'authenticated' ancora falso, ricomincia
-            }
-         }
 
-         //se lo username va bene e ho inviato la password devo sapere se è corretta
-         line = null;
-         while ((line = in.readLine()) != null && usernameInDatabase) {
-            if (line.equalsIgnoreCase("PASSWORD-OK")){
-               //la password era corretta
-               log.info("Password corretta");
-               authenticated = true;   //flag autenticato
-            } else if (line.equalsIgnoreCase("PASSWORD-WRONG")) {
-               //la password era errata
-               log.info("Password errata, ricomincio autenticazione");
                break;
-               //essendo il flag 'authenticated' ancora falso, ricomincia il ciclo iniziale
+            }
+
+            case "USERNAME-NOTFOUND":{
+               log.info("Lo username inserito non è presente nel database, riprova");
+               //essendo il flag 'authenticated' ancora falso, ricomincia
+
+               break;
+            }
+
+            case "PASSWORD-OK":{
+               if (usernameInDatabase) {
+                  //la password era corretta
+                  log.info("Password corretta");
+                  authenticated = true;   //flag autenticato
+               }
+
+               usernameInDatabase = false;
+               break;
+            }
+
+            case "PASSWORD-WRONG":{
+               if (usernameInDatabase){
+                  //la password era errata
+                  log.info("Password errata, ricomincio autenticazione");
+                  //essendo il flag 'authenticated' ancora falso, ricomincia il ciclo iniziale
+               } else {
+                  log.error("Non dovresti ricevere questo messaggio senza aver inserito prima uno username");
+               }
+
+               usernameInDatabase = false;
+               break;
+            }
+
+            default: {
+               log.warn("Ricevuto il seguente messaggio:{}", line);
+               log.warn("Il messaggio ricevuto non è conosciuto, ricomincio autenticazione");
+
+               break;
             }
          }
       }
