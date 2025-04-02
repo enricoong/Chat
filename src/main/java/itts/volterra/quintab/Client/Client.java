@@ -75,7 +75,8 @@ public class Client implements Runnable {
          }
 
          //comunicazione
-         sendMessageToServer("Ciaoooo");
+         String userInput = kbInput.nextLine().trim();
+         sendMessageToServer(userInput);
 
          //STOP e chiudo connessione
          sendMessageToServer("STOP");
