@@ -291,9 +291,9 @@ public class Client implements Runnable {
    }
 
    /**
-    * Metodo che richiama tutti i sotto-metodi che eseguono l'algoritmo di Diffie-Hellman
+    * Metodo che esegue l'algoritmo di Diffie-Hellman
     */
-   private void runDiffieHellmanAlgorithm() throws IOException {
+   private void runDiffieHellmanAlgorithm() throws IOException  {
       //attendo parametri in input dal server
       String line;
 

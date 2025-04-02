@@ -34,6 +34,7 @@ public class ClientHandler implements Runnable {
     private volatile boolean isRunning = true;
     private String tempUsername;    //salvo temporaneamente lo username con cui il client sta cercando di accedere
     private String currentUser = null;  //salvo il nome dello username loggato (se presente)
+    private Server server;  //riferimento al server
 
     /**
      * Costruttore
@@ -122,6 +123,18 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    /**
+     * Imposta il riferimento al server
+     *
+     * @param server L'istanza del server
+     */
+    public void setServer(Server server) {
+        this.server = server;
+    }
+
+    /**
+     * Chiude la connessione Server-Client, con i dovuti controlli
+     */
     private void closeConnection() {
         if (isRunning){
             isRunning = false;
@@ -129,6 +142,12 @@ public class ClientHandler implements Runnable {
                 if (in != null) in.close();
                 if (out != null) out.close();
                 if (socket != null && !socket.isClosed()) socket.close();
+
+                // Rimuovi questo client dalla lista dei client attivi nel server
+                if (server != null) {
+                    server.removeClient(this);
+                }
+
                 log.info("Connessione chiusa correttamente");
             } catch (IOException e) {
                 log.error("Errore durante la chiusura della connessione: ", e);
@@ -147,6 +166,9 @@ public class ClientHandler implements Runnable {
         return new BigInteger(1024, new SecureRandom());
     }
 
+    /**
+     * Metodo che esegue l'algoritmo di Diffie-Hellman
+     */
     private void runDiffieHellmanAlgorithm() throws IOException {
         /*
         Nel messaggio, i primi 3 char servono per capire cosa si vuole fare: DH = si sta eseguendo Diffie-Hellman,
@@ -188,6 +210,11 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    /**
+     * Handles the message received from a Client
+     *
+     * @param message Message received
+     */
     private void processMessage(String message) {
         if (currentUser == null) {
             //al momento non è loggato alcun utente
@@ -223,30 +250,45 @@ public class ClientHandler implements Runnable {
 
             //temp:
             log.info("Messaggio ricevuto: {}", message);
+
+            //TODO, temp:
+
+            // Gestione dei messaggi per utenti loggati
+            if (message.startsWith("BROADCAST-")) {
+                // Gestione dei messaggi di broadcast dagli utenti
+                String broadcastContent = message.substring(10);
+
+                // Prepara il messaggio di broadcast con lo username del mittente
+                String broadcastMessage = "MSG-" + currentUser + "-" + broadcastContent;
+
+                // Invia il messaggio a tutti gli altri client
+                if (server != null) {
+                    server.broadcastMessage(broadcastMessage, true, this);
+                    log.info("Broadcast da '{}': {}", currentUser, broadcastContent);
+                }
+            } else if (message.startsWith("PRIVATE-")) {
+                // Esempio di gestione di messaggi privati (formato: "PRIVATE-destinatario-contenuto")
+                // Questa è una funzionalità che potrebbe essere implementata in futuro
+                log.info("Messaggio privato ricevuto da {}: {}", currentUser, message);
+                sendMessageToClient("SYSTEM-PRIVATE_NOT_IMPLEMENTED");
+            } else {
+                // Altri messaggi non riconosciuti
+                log.info("Messaggio non riconosciuto da {}: {}", currentUser, message);
+                sendMessageToClient("SYSTEM-UNKNOWN_COMMAND");
+            }
         }
     }
 
     /**
      * Scrive nell'output stream di un Socket
      *
-     * @param socket  Socket
      * @param message Messaggio da scrivere
-     * @throws IOException Cagati addosso
      */
-    private void sendMessageToSocket(Socket socket, String message) {
-        PrintWriter pW = null;                                                     //writer per scrivere
-        boolean initialized = false;
-
-        while (!initialized) {
-            try {
-                pW = new PrintWriter(socket.getOutputStream(), true);
-                initialized = true;
-            } catch (IOException e) {
-                log.warn("Errore durante la creazione dell'output stream");
-            }
+    public void sendMessageToClient(String message) {
+        if (isRunning){
+            out.println(message);   //invio il messaggio al client
+        } else {
+            log.error("Errore durante l'invio di un messaggio al client: la connessione è terminata");
         }
-
-        pW.println(message);                                                //invio conferma ricezione
-        //pW.close();                                                         //chiudo stream
     }
 }
