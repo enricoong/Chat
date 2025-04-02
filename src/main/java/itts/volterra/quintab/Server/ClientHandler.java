@@ -143,7 +143,7 @@ public class ClientHandler implements Runnable {
                 if (out != null) out.close();
                 if (socket != null && !socket.isClosed()) socket.close();
 
-                // Rimuovi questo client dalla lista dei client attivi nel server
+                //rRimuove questo client dalla lista dei client attivi nel server
                 if (server != null) {
                     server.removeClient(this);
                 }
@@ -273,7 +273,7 @@ public class ClientHandler implements Runnable {
                 sendMessageToClient("SYSTEM-PRIVATE_NOT_IMPLEMENTED");
             } else {
                 // Altri messaggi non riconosciuti
-                log.info("Messaggio non riconosciuto da {}: {}", currentUser, message);
+                log.info("Messaggio non riconosciuto da '{}': {}", currentUser, message);
                 sendMessageToClient("SYSTEM-UNKNOWN_COMMAND");
             }
         }
@@ -286,7 +286,12 @@ public class ClientHandler implements Runnable {
      */
     public void sendMessageToClient(String message) {
         if (isRunning){
-            out.println(message);   //invio il messaggio al client
+           try {
+              String encryptedMessage = AES.encrypt(message, AESKey);   //invio il messaggio al client
+           } catch (Exception e) {
+              log.error("Errore durante l'invio di un messaggio", e);
+              log.debug("Errore durante l'invio del seguente messaggio: {}", message, e);
+           }
         } else {
             log.error("Errore durante l'invio di un messaggio al client: la connessione è terminata");
         }
