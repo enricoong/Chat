@@ -197,4 +197,115 @@ public class Database {
       //nessun risultato trovato o errore
       return null;
    }
+
+   /**
+    * Aggiunge un utente con livello default 1
+    *
+    * @param username Username dell'utente
+    * @param pwHash Hash della password dell'utente
+    * @return True se l'utente viene aggiunto, altrimenti false
+    */
+   public static boolean addUser(String username, String pwHash) {
+      if (username == null || pwHash == null) {
+         log.error("Username o password hash non possono essere null");
+         return false;
+      }
+
+      try (Connection conn = DatabaseConnection.getConnection();
+           PreparedStatement pstmt = conn.prepareStatement(
+                 "INSERT INTO users (username, pwHash, level) VALUES (?, ?, 1)")) {
+         //imposto i parametri per la query
+         pstmt.setString(1, username);
+         pstmt.setString(2, pwHash);
+
+         //eseguo la query e verifico quante righe sono state modificate
+         int rowsAffected = pstmt.executeUpdate();
+
+         if (rowsAffected > 0) {
+            log.info("Utente '{}' aggiunto con successo", username);
+            return true;
+         } else {
+            log.warn("Nessuna riga inserita per l'utente '{}'", username);
+            return false;
+         }
+      } catch (SQLException e) {
+         //errore in caso di username duplicato
+         if (e.getSQLState().equals("23505")) {    //codice per "unique violation"
+            log.warn("Impossibile aggiungere l'utente '{}': username già esistente", username);
+         } else {
+            log.error("Errore durante l'aggiunta dell'utente '{}': {}", username, e.getMessage());
+         }
+         return false;
+      }
+   }
+
+   /**
+    * Aggiunge un utente
+    *
+    * @param username Username dell'utente
+    * @param pwHash Hash della password dell'utente
+    * @param level Livello dell'utente
+    * @return True se l'utente viene aggiunto, altrimenti false
+    */
+   public static boolean addUser(String username, String pwHash, int level) {
+      if (username == null || pwHash == null) {
+         log.error("Username o password hash non possono essere null");
+         return false;
+      }
+
+      try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement pstmt = conn.prepareStatement("INSERT INTO users (username, pwHash, level) VALUES (?, ?, ?)")) {
+
+         //imposto i parametri per la query
+         pstmt.setString(1, username);
+         pstmt.setString(2, pwHash);
+         pstmt.setInt(3, level);
+
+         //eseguo la query e verifico quante righe sono state modificate
+         int rowsAffected = pstmt.executeUpdate();
+
+         if (rowsAffected > 0) {
+            log.info("Utente '{}' aggiunto con successo", username);
+            return true;
+         } else {
+            log.warn("Nessuna riga inserita per l'utente '{}'", username);
+            return false;
+         }
+      } catch (SQLException e) {
+         //errore in caso di username duplicato
+         if (e.getSQLState().equals("23505")) {    //codice per "unique violation"
+            log.warn("Impossibile aggiungere l'utente '{}': username già esistente", username);
+         } else {
+            log.error("Errore durante l'aggiunta dell'utente '{}': {}", username, e.getMessage());
+         }
+         return false;
+      }
+   }
+
+
+   /**
+    * Imposta il livello di un utente nel database.
+    * @param username Nome utente dell'utente da aggiornare
+    * @param level Nuovo livello da assegnare all'utente
+    * @return true se l'aggiornamento è avvenuto con successo, altrimenti false
+    */
+   public static boolean setUserLevel(String username, int level) {
+      try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement pstmt = conn.prepareStatement("UPDATE users SET level = ? WHERE username = ?")) {
+
+         //parametri per la query
+         pstmt.setInt(1, level);
+         pstmt.setString(2, username);
+
+         //eseguo l'update e controllo quante righe sono state modificate
+         int rowsAffected = pstmt.executeUpdate();
+
+         //se almeno una riga è stata aggiornata, successo
+         return rowsAffected > 0;
+
+      } catch (SQLException e) {
+         log.error("Errore durante l'aggiornamento del livello utente: {}", e.getMessage());
+         return false;
+      }
+   }
 }
