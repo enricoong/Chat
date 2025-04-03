@@ -78,38 +78,22 @@ public class ClientHandler implements Runnable {
                 log.debug("Chiave AES: {}", java.util.Arrays.hashCode(AESKey.getEncoded()));
 
                 while (isRunning && !socket.isClosed()) {
-                    String message = "EMPTY_MESSAGE";
+
                     boolean stop = false;
                     do {
-                        message = in.readLine();
-                        if (message != null){
-                            boolean messageOk = true;
-                            String decryptedMessage = null;
+                        String message = waitAndDecryptClientMessage();
+                        log.debug("Messaggio ricevuto: '{}'", message);
 
-                            log.debug("Messaggio ricevuto (grezzo): {}", message);
-
-                            //decifra il messaggio
-                            try {
-                                decryptedMessage = AES.decrypt(message, AESKey);
-                            } catch (Exception e) {
-                                //se errore durante decriptazione
-                                messageOk = false;
-                                log.warn("Errore durante la decriptazione del messaggio ricevuto dal client: {}", e.getMessage());
-                                log.error("Messaggio che ha causato l'errore: {}", message);
+                        if (message != null) {
+                            if (message.equalsIgnoreCase("STOP")){
+                                stop = true;
+                                closeConnection();
+                            } else {
+                                //elabora il messaggio e invia risposta
+                                processMessage(message);
                             }
-
-                            //se non ci sono stati errori durante la decriptazione
-                            if (messageOk) {
-                                log.debug("Messaggio ricevuto: {}", decryptedMessage);
-
-                                if (decryptedMessage.equalsIgnoreCase("STOP")){
-                                    stop = true;
-                                    closeConnection();
-                                } else {
-                                    //elabora il messaggio e invia risposta
-                                    processMessage(decryptedMessage);
-                                }
-                            }
+                        } else {
+                            log.warn("Il messaggio ricevuto è 'null'");
                         }
                     } while (!stop);
                 }
@@ -244,12 +228,11 @@ public class ClientHandler implements Runnable {
                     log.info("La password ricevuta dal client è errata");
                     sendMessageToClient("PASSWORD-WRONG");
                 }
+            } else {
+                log.error("Si sta tentando di comunicare senza aver effettuato l'autenticazione, messaggio causa: '{}'", message);
             }
         } else {
             //c'è già un utente loggato
-
-            //temp:
-            log.info("Messaggio ricevuto: {}", message);
 
             //TODO, temp:
 
@@ -296,5 +279,33 @@ public class ClientHandler implements Runnable {
         } else {
             log.error("Errore durante l'invio di un messaggio al client: la connessione è terminata");
         }
+    }
+
+    private String waitAndDecryptClientMessage() {
+        String encryptedMessage = null;
+
+        try {
+            while ((encryptedMessage = in.readLine()) == null){
+                /*wait for a message todo: better thread management*/
+                try {
+                    Thread.sleep(100);  //per evitare il busy-waiting
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    log.error("Thread interrotto durante l'attesa del messaggio", e);
+                }
+            }
+        } catch (IOException e) {
+            log.error("Errore durante l'attesa del messaggio: {}", e.getMessage());
+        }
+
+        log.debug("Messaggio ricevuto (grezzo): {}", encryptedMessage);
+
+        try {
+            return AES.decrypt(encryptedMessage, AESKey);
+        } catch (Exception e) {
+            log.error("Errore durante la decriptazione del messaggio: {}", e.getMessage());
+        }
+
+        return null;
     }
 }

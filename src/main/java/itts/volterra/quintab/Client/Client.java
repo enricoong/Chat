@@ -14,6 +14,7 @@ import java.math.BigInteger;
 import java.net.*;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class Client implements Runnable {
@@ -62,7 +63,7 @@ public class Client implements Runnable {
             log.debug("AES key algorithm: {}", AESKey.getAlgorithm());
             log.debug("AES key format: {}", AESKey.getFormat());
             log.debug("AES key encoded length: {}", AESKey.getEncoded().length);
-            log.debug("Chiave AES: {}", java.util.Arrays.hashCode(AESKey.getEncoded()));
+            log.debug("Chiave AES: {}", Arrays.hashCode(AESKey.getEncoded()));
          } catch (IOException e) {
             log.error("Errore durante lo scambio Diffie-Hellman", e);
          }
@@ -108,89 +109,71 @@ public class Client implements Runnable {
             sendMessageToServer("USRNM-" + username);   //invio username al server
          }
 
-         String encryptedMessage;
-         while ((encryptedMessage = in.readLine()) == null){
-            /*wait for a message todo: better thread management*/
-            try {
-               Thread.sleep(100);  //per evitare il busy-waiting
-            } catch (InterruptedException e) {
-               Thread.currentThread().interrupt();
-               log.error("Thread interrotto durante l'attesa del messaggio", e);
+         String line = waitAndDecryptServerMessage();
+
+         log.debug("Messaggio ricevuto: {}", line);
+         switch (line) {
+            case "USERNAME-OK":{
+               //lo username esiste nel database
+               usernameInDatabase = true;
+               log.info("Lo username inserito è presente nel database");
+
+               System.out.print("Inserisci la password: ");
+               String pwHash = null;
+               try {
+                  pwHash = SHA256.encrypt(kbInput.nextLine().trim());  //acquisisco input
+               } catch (NoSuchAlgorithmException e) {
+                  log.error("errore durante la criptazione della password", e);
+               }
+
+               sendMessageToServer("PSSWD-" + pwHash);
+
+               break;
             }
-         }
-         log.debug("Messaggio ricevuto (grezzo): {}", encryptedMessage);
 
-         String line = null;
-         try {
-            line = AES.decrypt(encryptedMessage, AESKey);
-         } catch (Exception e) {
-            log.error("Errore durante la decriptazione del messaggio: {}", e.getMessage());
-            log.debug("Messaggio che ha causato l'errore: '{}'", line);
-         } finally {
-            log.debug("Messaggio ricevuto: {}", line);
-            switch (line) {
-               case "USERNAME-OK":{
-                  //lo username esiste nel database
-                  usernameInDatabase = true;
-                  log.info("Lo username inserito è presente nel database");
+            case "USERNAME-NOTFOUND":{
+               log.info("Lo username inserito non è presente nel database, riprova");
+               //essendo il flag 'authenticated' ancora falso, ricomincia
 
-                  System.out.print("Inserisci la password: ");
-                  String pwHash = null;
-                  try {
-                     pwHash = SHA256.encrypt(kbInput.nextLine().trim());  //acquisisco input
-                  } catch (NoSuchAlgorithmException e) {
-                     log.error("errore durante la criptazione della password", e);
-                  }
+               break;
+            }
 
-                  sendMessageToServer("PSSWD-" + pwHash);
-
-                  break;
+            case "PASSWORD-OK":{
+               if (usernameInDatabase) {
+                  //la password era corretta
+                  log.info("Password corretta");
+                  authenticated = true;   //flag autenticato
+               } else {
+                  log.error("Non dovresti ricevere questo messaggio senza aver inserito prima uno username");
                }
 
-               case "USERNAME-NOTFOUND":{
-                  log.info("Lo username inserito non è presente nel database, riprova");
-                  //essendo il flag 'authenticated' ancora falso, ricomincia
+               usernameInDatabase = false;
+               break;
+            }
 
-                  break;
+            case "PASSWORD-WRONG":{
+               if (usernameInDatabase){
+                  //la password era errata
+                  log.info("Password errata, ricomincio autenticazione");
+                  //essendo il flag 'authenticated' ancora falso, ricomincia il ciclo iniziale
+               } else {
+                  log.error("Non dovresti ricevere questo messaggio senza aver inserito prima uno username");
                }
 
-               case "PASSWORD-OK":{
-                  if (usernameInDatabase) {
-                     //la password era corretta
-                     log.info("Password corretta");
-                     authenticated = true;   //flag autenticato
-                  } else {
-                     log.error("Non dovresti ricevere questo messaggio senza aver inserito prima uno username");
-                  }
+               usernameInDatabase = false;
+               break;
+            }
 
-                  usernameInDatabase = false;
-                  break;
-               }
+            case null: {
+               log.warn("Ricevuto un messaggio vuoto, probabilmente c'è qualcosa che non va");
+               break;
+            }
 
-               case "PASSWORD-WRONG":{
-                  if (usernameInDatabase){
-                     //la password era errata
-                     log.info("Password errata, ricomincio autenticazione");
-                     //essendo il flag 'authenticated' ancora falso, ricomincia il ciclo iniziale
-                  } else {
-                     log.error("Non dovresti ricevere questo messaggio senza aver inserito prima uno username");
-                  }
+            default: {
+               log.warn("Ricevuto il seguente messaggio:{}", line);
+               log.warn("Il messaggio ricevuto non è conosciuto, ricomincio autenticazione");
 
-                  usernameInDatabase = false;
-                  break;
-               }
-
-               case null: {
-                  log.warn("Ricevuto un messaggio vuoto, probabilmente c'è qualcosa che non va");
-                  break;
-               }
-
-               default: {
-                  log.warn("Ricevuto il seguente messaggio:{}", line);
-                  log.warn("Il messaggio ricevuto non è conosciuto, ricomincio autenticazione");
-
-                  break;
-               }
+               break;
             }
          }
       }
@@ -301,5 +284,33 @@ public class Client implements Runnable {
             break;
          }
       }
+   }
+
+   private String waitAndDecryptServerMessage() {
+      String encryptedMessage = null;
+
+      try {
+         while ((encryptedMessage = in.readLine()) == null){
+            /*wait for a message todo: better thread management*/
+            try {
+               Thread.sleep(100);  //per evitare il busy-waiting
+            } catch (InterruptedException e) {
+               Thread.currentThread().interrupt();
+               log.error("Thread interrotto durante l'attesa del messaggio", e);
+            }
+         }
+      } catch (IOException e) {
+         log.error("Errore durante l'attesa del messaggio: {}", e.getMessage());
+      }
+
+      log.debug("Messaggio ricevuto (grezzo): {}", encryptedMessage);
+
+      try {
+         return AES.decrypt(encryptedMessage, AESKey);
+      } catch (Exception e) {
+         log.error("Errore durante la decriptazione del messaggio: {}", e.getMessage());
+      }
+
+      return null;
    }
 }

@@ -11,9 +11,9 @@
     </Appenders>
 
     <Loggers>
-        <!--logger per file TODO: non worka-->
-        <Logger name="itts.volterra.quintab.Server.Main" level="debug" additivity="false">
+        <Logger name="itts.volterra.quintab.Server" level="debug" additivity="false">
             <AppenderRef ref="fileAppender" />
+            <AppenderRef ref="console" />
         </Logger>
 
         <!--logger per console-->
