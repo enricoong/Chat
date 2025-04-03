@@ -4,9 +4,19 @@
         <Console name="console" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level \t| %msg%n" />
         </Console>
+
+        <File name="fileAppender" fileName="logs/server.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %c{1} \t| %msg%n" />
+        </File>
     </Appenders>
 
     <Loggers>
+        <!--logger per file TODO: non worka-->
+        <Logger name="itts.volterra.quintab.Server.Main" level="debug" additivity="false">
+            <AppenderRef ref="fileAppender" />
+        </Logger>
+
+        <!--logger per console-->
         <Root level="debug"> <!-- cambia qui il livello dei log -->
             <AppenderRef ref="console" />
         </Root>
