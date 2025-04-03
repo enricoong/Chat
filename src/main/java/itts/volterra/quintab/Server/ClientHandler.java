@@ -75,7 +75,7 @@ public class ClientHandler implements Runnable {
                 AESKey = AES.generateKeyForAES(sharedKey);
                 log.debug("AES key format: {}", AESKey.getFormat());
                 log.debug("AES key encoded length: {}", AESKey.getEncoded().length);
-                log.debug("Chiave AES: {}", AESKey.hashCode());
+                log.debug("Chiave AES: {}", java.util.Arrays.hashCode(AESKey.getEncoded()));
 
                 while (isRunning && !socket.isClosed()) {
                     String message = "EMPTY_MESSAGE";
@@ -94,7 +94,7 @@ public class ClientHandler implements Runnable {
                             } catch (Exception e) {
                                 //se errore durante decriptazione
                                 messageOk = false;
-                                log.warn("Errore durante la decriptazione del messaggio ricevuto dal client: {}", e);
+                                log.warn("Errore durante la decriptazione del messaggio ricevuto dal client: {}", e.getMessage());
                                 log.error("Messaggio che ha causato l'errore: {}", message);
                             }
 
@@ -114,7 +114,7 @@ public class ClientHandler implements Runnable {
                     } while (!stop);
                 }
             } catch (IOException e) {
-                log.error("Errore durante la comunicazione", e);
+                log.error("Errore durante la comunicazione: {}", e.getMessage());
             } finally {
                 if (isRunning){
                     closeConnection();
@@ -224,10 +224,10 @@ public class ClientHandler implements Runnable {
                 if (Database.usernameExists(message.substring(6))){
                     tempUsername = message.substring(6); //salvo temporaneamente lo username
                     log.info("Cercato username '{}': trovato nel database", message.substring(6));
-                    out.println("USERNAME-OK");  //invio messaggio ok al client
+                    sendMessageToClient("USERNAME-OK");  //invio messaggio ok al client
                 } else {
                     log.info("Cercato username '{}': non è presente nel database", message.substring(6));
-                    out.println("USERNAME-NOTFOUND");    //invio messaggio notfound al client
+                    sendMessageToClient("USERNAME-NOTFOUND");    //invio messaggio notfound al client
                 }
             } else if (message.startsWith("PSSWD-")) {
                 String pwHash = Database.getPasswordHash(tempUsername);
@@ -236,13 +236,13 @@ public class ClientHandler implements Runnable {
                 if (pwHash != null && pwHash.equals(message.substring(6))){
                     //la password ricevuta è corretta
                     log.info("La password ricevuta dal client è corretta");
-                    out.println("PASSWORD-OK");
+                    sendMessageToClient("PASSWORD-OK");
                     currentUser = tempUsername; //imposto utente loggato
                     tempUsername = null;    //azzero utente temporaneo
                 } else {
                     //la password non è corretta
                     log.info("La password ricevuta dal client è errata");
-                    out.println("PASSWORD-WRONG");
+                    sendMessageToClient("PASSWORD-WRONG");
                 }
             }
         } else {
@@ -287,7 +287,8 @@ public class ClientHandler implements Runnable {
     public void sendMessageToClient(String message) {
         if (isRunning){
            try {
-              String encryptedMessage = AES.encrypt(message, AESKey);   //invio il messaggio al client
+              String encryptedMessage = AES.encrypt(message, AESKey);   //cripto il messaggio
+              out.println(encryptedMessage);        //invio il messaggio al client
            } catch (Exception e) {
               log.error("Errore durante l'invio di un messaggio", e);
               log.debug("Errore durante l'invio del seguente messaggio: {}", message, e);
