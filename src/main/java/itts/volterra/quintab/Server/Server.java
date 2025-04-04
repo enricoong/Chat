@@ -47,6 +47,7 @@ public class Server implements Runnable {
         log.info("IP di questa macchina: {}", getIpOfCurrentMachine());
 
         while (true){   //ciclo di ascolto
+            //TODO: ping periodico per vedere se un client è inattivo, poi lo disconnetto
             try {
                 log.info("In attesa di connessione...");                        //log attesa di connessione
                 Socket otherClient = srvSocket.accept();                        //attendo richiesta di connessione

@@ -2,6 +2,7 @@ package itts.volterra.quintab.Client;
 
 import itts.volterra.quintab.Features.AES;
 import itts.volterra.quintab.Features.SHA256;
+import itts.volterra.quintab.Server.Database.Database;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -64,6 +65,7 @@ public class Client implements Runnable {
             log.debug("AES key format: {}", AESKey.getFormat());
             log.debug("AES key encoded length: {}", AESKey.getEncoded().length);
             log.debug("Chiave AES: {}", Arrays.hashCode(AESKey.getEncoded()));
+            log.info("Chiave AES creata con successo");
          } catch (IOException e) {
             log.error("Errore durante lo scambio Diffie-Hellman", e);
          }
@@ -76,12 +78,14 @@ public class Client implements Runnable {
          }
 
          //comunicazione
-         System.out.print("Inserisci messaggio: ");
-         String userInput = kbInput.nextLine().trim();
-         sendMessageToServer(userInput);
+         String userInput;
+         do {
+            System.out.print("Scrivi >");
+            userInput = kbInput.nextLine().trim();
+            sendMessageToServer(userInput);
+         } while (!userInput.equalsIgnoreCase("STOP"));  //quando il messaggio inviato è stop allora esco
 
          //STOP e chiudo connessione
-         sendMessageToServer("STOP");
          stop = true;
       }
 
@@ -132,7 +136,17 @@ public class Client implements Runnable {
             }
 
             case "USERNAME-NOTFOUND":{
-               log.info("Lo username inserito non è presente nel database, riprova");
+               log.info("Lo username inserito non è presente nel database");
+               System.out.print("Vuoi creare un nuovo utente? [Y/N] >");
+               char choice = kbInput.nextLine().trim().charAt(0);  //acquisisco input
+               if (choice == 'Y' || choice == 'y') {
+                  createNewUser();
+               } else if (choice == 'N' || choice == 'n') {
+                  log.info("Ok, ricomincio autenticazione");
+               } else {
+                  log.warn("Valore non riconosciuto, risposta ignorata");
+               }
+
                //essendo il flag 'authenticated' ancora falso, ricomincia
 
                break;
@@ -312,5 +326,32 @@ public class Client implements Runnable {
       }
 
       return null;
+   }
+
+   private void createNewUser() {
+      System.out.print("Inserisci lo username del nuovo utente >");
+      String newUsername = kbInput.nextLine().trim();  //acquisisco input
+      System.out.print("Inserisci la password del nuovo utente >");
+      String newPwHash = null;
+      try {
+         newPwHash = SHA256.encrypt(kbInput.nextLine().trim());  //acquisisco input
+      } catch (Exception e) {
+         log.error("Errore durante la criptazione della password");
+
+      }
+      System.out.print("Reinserisci la password >");
+      String newPwHashCheck = null;
+      try {
+         newPwHashCheck = SHA256.encrypt(kbInput.nextLine().trim());  //acquisisco input
+      } catch (Exception e) {
+         log.error("Errore durante la criptazione della password");
+      }
+      if (newPwHash != null && newPwHash.equals(newPwHashCheck)) {
+         //ok le due pw sono uguali
+         Database.addUser(newUsername, newPwHash);
+      } else {
+         //folpo te ga sbaja a reinserire 'e password
+         log.warn("Le password non corrispondono, operazione annullata");
+      }
    }
 }

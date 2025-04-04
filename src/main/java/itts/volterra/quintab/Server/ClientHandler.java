@@ -76,9 +76,9 @@ public class ClientHandler implements Runnable {
                 log.debug("AES key format: {}", AESKey.getFormat());
                 log.debug("AES key encoded length: {}", AESKey.getEncoded().length);
                 log.debug("Chiave AES: {}", java.util.Arrays.hashCode(AESKey.getEncoded()));
+                log.info("Chiave AES creata con successo");
 
                 while (isRunning && !socket.isClosed()) {
-
                     boolean stop = false;
                     do {
                         String message = waitAndDecryptClientMessage();
