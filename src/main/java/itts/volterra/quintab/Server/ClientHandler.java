@@ -117,9 +117,18 @@ public class ClientHandler implements Runnable {
     }
 
     /**
+     * Restituisce lo username dell'utente corrente
+     *
+     * @return Username dell'utente corrente o null se non autenticato
+     */
+    public String getCurrentUser() {
+        return currentUser;
+    }
+
+    /**
      * Chiude la connessione Server-Client, con i dovuti controlli
      */
-    private void closeConnection() {
+    protected void closeConnection() {
         if (isRunning){
             isRunning = false;
             try {
