@@ -348,8 +348,7 @@ public class Client implements Runnable {
       }
       if (newPwHash != null && newPwHash.equals(newPwHashCheck)) {
          //ok le due pw sono uguali
-         Database.addUser(newUsername, newPwHash);
-      } else {
+         Database.addUser(newUsername, newPwHash);      } else {
          //folpo te ga sbaja a reinserire 'e password
          log.warn("Le password non corrispondono, operazione annullata");
       }
