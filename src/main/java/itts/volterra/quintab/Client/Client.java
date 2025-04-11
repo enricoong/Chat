@@ -78,12 +78,19 @@ public class Client implements Runnable {
          }
 
          //comunicazione
+         log.warn("--- Scrivi 'STOP' per terminare il programma ---");
          String userInput;
          do {
             System.out.print("Scrivi >");
             userInput = kbInput.nextLine().trim();
-            sendMessageToServer(userInput);
-         } while (!userInput.equalsIgnoreCase("STOP"));  //quando il messaggio inviato è stop allora esco
+            if(userInput.equals("STOP")){
+               //stop
+               stop = true;
+               sendMessageToServer(userInput);
+            } else {
+               sendMessageToServer("MSG-" + userInput);
+            }
+         } while (!stop);
 
          //STOP e chiudo connessione
          stop = true;
