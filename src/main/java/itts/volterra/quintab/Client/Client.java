@@ -54,56 +54,43 @@ public class Client implements Runnable {
          }
       } while (connecitonResult == 0 && !stop);    //se ritorna codice 0 allora errore e ritento connessione, oppure esco se utente ha deciso di uscire
 
-      while (!stop) {
-         //scambio Diffie-Hellman
-         try {
-            runDiffieHellmanAlgorithm();
-
-            log.debug("Shared key bytes length: {}", sharedKey.toByteArray().length);
-            AESKey = AES.generateKeyForAES(sharedKey);
-            log.debug("AES key algorithm: {}", AESKey.getAlgorithm());
-            log.debug("AES key format: {}", AESKey.getFormat());
-            log.debug("AES key encoded length: {}", AESKey.getEncoded().length);
-            log.debug("Chiave AES: {}", Arrays.hashCode(AESKey.getEncoded()));
-            log.info("Chiave AES creata con successo");
-         } catch (IOException e) {
-            log.error("Errore durante lo scambio Diffie-Hellman", e);
-         }
-
-         //autenticazione
-         try {
-            authenticate();
-         } catch (IOException e) {
-            log.error("Errore durante l'autenticazione", e);
-         }
-
-         //comunicazione
-         log.warn("--- Scrivi 'STOP' per terminare il programma ---");
-         String userInput;
-         do {
-            System.out.print("Scrivi >");
-            userInput = kbInput.nextLine().trim();
-            if(userInput.equals("STOP")){
-               //stop
-               stop = true;
-               sendMessageToServer(userInput);
-            } else {
-               sendMessageToServer("MSG-" + userInput);
-            }
-         } while (!stop);
-
-         //STOP e chiudo connessione
-         stop = true;
-      }
-
       try {
-         in.close();
+         runDiffieHellmanAlgorithm();
+
+         log.debug("Shared key bytes length: {}", sharedKey.toByteArray().length);
+         AESKey = AES.generateKeyForAES(sharedKey);
+         log.debug("AES key algorithm: {}", AESKey.getAlgorithm());
+         log.debug("AES key format: {}", AESKey.getFormat());
+         log.debug("AES key encoded length: {}", AESKey.getEncoded().length);
+         log.debug("Chiave AES: {}", Arrays.hashCode(AESKey.getEncoded()));
+         log.info("Chiave AES creata con successo");
       } catch (IOException e) {
-         log.error("Errore durante la chiusura del Reader", e);
+         log.error("Errore durante lo scambio Diffie-Hellman", e);
       }
-      out.close();
-      kbInput.close();                    //chiudo scanner
-      Thread.currentThread().interrupt(); //fermo thread
+
+      //autenticazione
+      try {
+         authenticate();
+      } catch (IOException e) {
+         log.error("Errore durante l'autenticazione", e);
+      }
+
+      //comunicazione
+      log.warn("--- Scrivi 'STOP' per terminare il programma ---");
+      String userInput;
+      do {
+         System.out.print("Scrivi >");
+         userInput = kbInput.nextLine().trim();
+         if(userInput.equals("STOP")){
+            //stop
+            stop = true;
+            sendMessageToServer(userInput);
+         } else {
+            sendMessageToServer("MSG-" + userInput);
+         }
+      } while (!stop);
+
+      stopAndDisconnect();
    }
 
    /**
@@ -227,11 +214,25 @@ public class Client implements Runnable {
    }
 
    /**
+    * Chiude input e output stream e interrompe il Thread
+    */
+   protected void stopAndDisconnect(){
+      try {
+         in.close();
+      } catch (IOException e) {
+         log.error("Errore durante la chiusura del Reader", e);
+      }
+      out.close();
+      kbInput.close();                    //chiudo scanner
+      Thread.currentThread().interrupt(); //fermo thread
+   }
+
+   /**
     * Invia un messaggio al server
     *
     * @param message Messaggio
     */
-   private void sendMessageToServer(String message) {
+   protected void sendMessageToServer(String message) {
       if (AESKey.isDestroyed()){
          log.warn("Non è stato possibile inviare il messaggio perché la chiave AES è stata distrutta");
          return;
