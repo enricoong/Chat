@@ -12,7 +12,8 @@ public class Main {
     private static final Logger log = LogManager.getLogger(Main.class);
 
     public static void main(String[] args){
-        new Thread(new Window()).start();
+        ClientFunctionalities client = new ClientFunctionalities();
+        new Thread(new Window(client)).start();
         //new Thread(new Client()).start();           //avvio client
     }
 }

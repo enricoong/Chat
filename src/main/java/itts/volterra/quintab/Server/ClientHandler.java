@@ -136,7 +136,7 @@ public class ClientHandler implements Runnable {
                 if (out != null) out.close();
                 if (socket != null && !socket.isClosed()) socket.close();
 
-                //rRimuove questo client dalla lista dei client attivi nel server
+                //rimuove questo client dalla lista dei client attivi nel server
                 if (server != null) {
                     server.removeClient(this);
                 }
@@ -304,7 +304,8 @@ public class ClientHandler implements Runnable {
                 }
             }
         } catch (IOException e) {
-            log.error("Errore durante l'attesa del messaggio: {}", e.getMessage());
+            log.error("Errore durante l'attesa del messaggio: {}. La connessione verrà terminata.", e.getMessage());
+            closeConnection();
         }
 
         log.debug("Messaggio ricevuto (grezzo): {}", encryptedMessage);
