@@ -17,8 +17,18 @@ public class Window extends JFrame implements Runnable {
       }
    }
 
+   private void initialize() {
+      SwingUtilities.invokeLater(() -> {
+         JFrame frame = new JFrame("Chat - Negretto Enrico");
+         frame.setSize(800, 600);
+         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+         frame.setLocationRelativeTo(null);  //centra la finestra
+         frame.setVisible(true);
+      });
+   }
+
    public void run() {
       //TODO creare
-      
+      initialize();
    }
 }

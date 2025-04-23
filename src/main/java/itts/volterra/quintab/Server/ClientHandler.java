@@ -245,26 +245,26 @@ public class ClientHandler implements Runnable {
 
             //TODO, temp:
 
-            // Gestione dei messaggi per utenti loggati
+            //gestione dei messaggi per utenti loggati
             if (message.startsWith("BROADCAST-")) {
-                // Gestione dei messaggi di broadcast dagli utenti
+                //gestione dei messaggi di broadcast dagli utenti
                 String broadcastContent = message.substring(10);
 
-                // Prepara il messaggio di broadcast con lo username del mittente
+                //prepara il messaggio di broadcast con lo username del mittente
                 String broadcastMessage = "MSG-" + currentUser + "-" + broadcastContent;
 
-                // Invia il messaggio a tutti gli altri client
+                //invia il messaggio a tutti gli altri client
                 if (server != null) {
                     server.broadcastMessage(broadcastMessage, true, this);
                     log.info("Broadcast da '{}': {}", currentUser, broadcastContent);
                 }
             } else if (message.startsWith("PRIVATE-")) {
-                // Esempio di gestione di messaggi privati (formato: "PRIVATE-destinatario-contenuto")
-                // Questa è una funzionalità che potrebbe essere implementata in futuro
+                //esempio di gestione di messaggi privati (formato: "PRIVATE-destinatario-contenuto")
+                //questa è una funzionalità che potrebbe essere implementata in futuro
                 log.info("Messaggio privato ricevuto da {}: {}", currentUser, message);
                 sendMessageToClient("SYSTEM-PRIVATE_NOT_IMPLEMENTED");
             } else {
-                // Altri messaggi non riconosciuti
+                //altri messaggi non riconosciuti
                 log.info("Messaggio non riconosciuto da '{}': {}", currentUser, message);
                 sendMessageToClient("SYSTEM-UNKNOWN_COMMAND");
             }

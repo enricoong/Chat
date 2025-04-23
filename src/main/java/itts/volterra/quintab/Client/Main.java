@@ -12,7 +12,7 @@ public class Main {
     private static final Logger log = LogManager.getLogger(Main.class);
 
     public static void main(String[] args){
-        new Window();
+        new Thread(new Window()).start();
         //new Thread(new Client()).start();           //avvio client
     }
 }
