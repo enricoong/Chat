@@ -11,12 +11,19 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class Window extends JFrame implements Runnable {
    private static final Logger log = LogManager.getLogger(Window.class);
 
    JFrame mainFrame, serverInputFrame; //le due finestre
    ClientFunctionalities client;
+
+   //elementi mainFrame:
+   private JTextArea chatArea;
+   private JTextField messageField;
+   private JComboBox<String> messageTypeComboBox;
 
    public Window(ClientFunctionalities client) {
       try {
@@ -30,6 +37,8 @@ public class Window extends JFrame implements Runnable {
    public void run() {
       initializeMainWindow();    //inizializzo finestra principale
       initializeServerWindow();  //creo finestra richiesta ip server
+
+      //TODO: aggiungere logging
    }
 
    /**
@@ -53,6 +62,60 @@ public class Window extends JFrame implements Runnable {
                System.exit(0);
             }
          });
+
+         //crea il pannello principale con BorderLayout
+         JPanel mainPanel = new JPanel(new BorderLayout(5, 5));
+         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+         //crea l'area della chat con scroll
+         chatArea = new JTextArea();
+         chatArea.setEditable(false);
+         chatArea.setLineWrap(true);
+         chatArea.setWrapStyleWord(true);
+         chatArea.setFont(new Font("Sans-Serif", Font.PLAIN, 14));
+
+         JScrollPane scrollPane = new JScrollPane(chatArea);
+         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+
+         //crea il pannello inferiore per input e invio
+         JPanel bottomPanel = new JPanel(new BorderLayout(5, 0));
+
+         //menu dropdown a sinistra
+         String[] messageTypes = {"Messaggio Pubblico", "Messaggio Privato", "Server (RAW)"};
+         messageTypeComboBox = new JComboBox<>(messageTypes);
+         messageTypeComboBox.setPreferredSize(new Dimension(150, 30));
+
+         //input al centro
+         messageField = new JTextField();
+         messageField.setFont(new Font("Sans-Serif", Font.PLAIN, 14));
+
+         //pulsante invio a destra
+         JButton sendButton = new JButton("Invia");
+         sendButton.setPreferredSize(new Dimension(100, 30));
+
+         //azione per l'invio del messaggio
+         ActionListener sendAction = e -> sendMessage();
+
+         //associa l'azione al pulsante e al tasto Invio nel campo di testo
+         sendButton.addActionListener(sendAction);
+         messageField.addActionListener(sendAction);
+
+         //aggiungi i componenti al pannello inferiore
+         bottomPanel.add(messageTypeComboBox, BorderLayout.WEST);
+         bottomPanel.add(messageField, BorderLayout.CENTER);
+         bottomPanel.add(sendButton, BorderLayout.EAST);
+
+         //aggiungi i pannelli principali al frame
+         mainPanel.add(scrollPane, BorderLayout.CENTER);
+         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
+
+         mainFrame.add(mainPanel);
+
+         //aggiungi un messaggio iniziale
+         addSystemMessage("Connesso al server. Benvenuto!");
+
+         //focus sul campo di input
+         messageField.requestFocusInWindow();
       });
    }
 
@@ -180,5 +243,77 @@ public class Window extends JFrame implements Runnable {
     */
    private void setMainWindowVisible(boolean visible) {
       mainFrame.setVisible(visible);
+   }
+
+   /**
+    * Metodo per aggiungere messaggi di sistema all'area della chat
+    *
+    * @param message Messaggio
+    */
+   public void addSystemMessage(String message) {
+      SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+      String timestamp = sdf.format(new Date());
+
+      chatArea.append("[" + timestamp + "] [SISTEMA]: " + message + "\n");
+      scrollToBottom();
+   }
+
+   /**
+    * Aggiunge on-screen i messaggi inviati
+    *
+    * @param type Tipo messaggio
+    * @param message Messaggio
+    */
+   private void addOutgoingMessage(String type, String message) {
+      SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+      String timestamp = sdf.format(new Date());
+
+      chatArea.append("[" + timestamp + "] [TU] [" + type + "]: " + message + "\n");
+      scrollToBottom();
+   }
+
+   /**
+    * Invia messaggio al server
+    */
+   private void sendMessage() {
+      log.debug("Premuto tasto di invio messaggio");
+
+      String messageText = messageField.getText().trim();
+      if (!messageText.isEmpty()) {
+         log.debug("Il campo di testo non è vuoto");
+         String messageType = (String) messageTypeComboBox.getSelectedItem();
+
+         //aggiungi il messaggio all'area della chat
+         addOutgoingMessage(messageType, messageText);
+
+         //todo: logica per inviare il messaggio
+
+         String messagePrefix = "";
+         switch (messageType) {
+            case "Messaggio Privato":{
+               messagePrefix = "PRVMSG-";
+
+               break;
+            }
+
+            case "Server (RAW)":{
+               messagePrefix = "";
+
+               break;
+            }
+         }
+
+         ClientFunctionalities.sendMessageToServer(messagePrefix + messageText);
+
+         //pulisci campo input
+         messageField.setText("");
+      }
+   }
+
+   /**
+    * Scorre automaticamente verso il basso
+    */
+   private void scrollToBottom() {
+      chatArea.setCaretPosition(chatArea.getDocument().getLength());
    }
 }
