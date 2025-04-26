@@ -23,7 +23,7 @@ public class ClientFunctionalities {
 
    private static final Logger log = LogManager.getLogger(ClientFunctionalities.class);
    private BufferedReader in;
-   private PrintWriter out;
+   private static PrintWriter out;
    private final Scanner kbInput = new Scanner(System.in);
    private Socket server;
 
@@ -32,7 +32,7 @@ public class ClientFunctionalities {
    private BigInteger clientPrivateKey;
    private BigInteger clientPublicKey;
    private BigInteger sharedKey;
-   private SecretKey AESKey;
+   private static SecretKey AESKey;
 
    //autenticazione
    String loggedUser = null;
@@ -238,7 +238,7 @@ public class ClientFunctionalities {
     *
     * @param message Messaggio
     */
-   protected void sendMessageToServer(String message) {
+   public static void sendMessageToServer(String message) {
       if (AESKey.isDestroyed()){
          log.warn("Non è stato possibile inviare il messaggio perché la chiave AES è stata distrutta");
          return;

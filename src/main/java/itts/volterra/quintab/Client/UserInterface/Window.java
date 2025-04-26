@@ -9,10 +9,13 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class Window extends JFrame implements Runnable {
    private static final Logger log = LogManager.getLogger(Window.class);
-   JFrame mainFrame, serverInputFrame;
+
+   JFrame mainFrame, serverInputFrame; //le due finestre
    ClientFunctionalities client;
 
    public Window(ClientFunctionalities client) {
@@ -25,27 +28,37 @@ public class Window extends JFrame implements Runnable {
    }
 
    public void run() {
-      initializeServerWindow();  //creo finestra server
-      //setServerWindowVisible(true); //nascondo finestra server
-
-      initializeMainWindow(); //creo finestra principale
-      //setMainWindowVisible(true);  //nascondo finestra principale
+      initializeMainWindow();    //inizializzo finestra principale
+      initializeServerWindow();  //creo finestra richiesta ip server
    }
 
+   /**
+    * Inizializza la finestra principale della chat
+    */
    private void initializeMainWindow() {
       SwingUtilities.invokeLater(() -> {
          mainFrame = new JFrame("Chat - Negretto Enrico");
          mainFrame.setSize(800, 600);
-         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+         mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);   //gestisco chiusura da actionListener
          mainFrame.setLocationRelativeTo(null);  //centra la finestra
          mainFrame.setVisible(false);
+
+         //ATTENZIONE: senza il seguente actionListener, quando il client si chiude,
+         // il server non chiude correttamente la connessione
+         //actionListener chiusura:
+         mainFrame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent evt) {
+               //invio messaggio "STOP" a server e chiudo programma
+               ClientFunctionalities.sendMessageToServer("STOP");
+               System.exit(0);
+            }
+         });
       });
    }
 
-   private void setMainWindowVisible(boolean visible) {
-      mainFrame.setVisible(visible);
-   }
-
+   /**
+    * Inizializza la finestra di input dell'IP del server
+    */
    private void initializeServerWindow() {
       SwingUtilities.invokeLater(() -> {
          serverInputFrame = new JFrame("Inserisci server per Chat - Negretto Enrico");
@@ -104,6 +117,9 @@ public class Window extends JFrame implements Runnable {
                   boolean connectionResult = client.initializeConnection(serverIP);
                   if (connectionResult){
                      errorLabel.setText("Connessione  stabilita con successo!");
+                     serverInputFrame.setVisible(false);    //quando connesso, nascondo il popup di connessione
+                     initializeMainWindow();
+                     mainFrame.setVisible(true);   //e mostro la finestra principale
                   } else {
                      errorLabel.setText("Errore durante l'inizializzazione della connessione");
                   }
@@ -148,7 +164,21 @@ public class Window extends JFrame implements Runnable {
       }
    }
 
+   /**
+    * Cambia visibilità della finestra della selezione del server
+    *
+    * @param visible Visibilità
+    */
    private void setServerWindowVisible(boolean visible) {
       serverInputFrame.setVisible(visible);
+   }
+
+   /**
+    * Cambia visibilità della finestra principale
+    *
+    * @param visible Visibilità
+    */
+   private void setMainWindowVisible(boolean visible) {
+      mainFrame.setVisible(visible);
    }
 }
