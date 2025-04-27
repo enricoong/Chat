@@ -17,13 +17,20 @@ import java.util.Date;
 public class Window extends JFrame implements Runnable {
    private static final Logger log = LogManager.getLogger(Window.class);
 
-   JFrame mainFrame, serverInputFrame; //le due finestre
+   JFrame mainFrame, serverInputFrame, loginFrame; //le tre finestre
    ClientFunctionalities client;
 
    //elementi mainFrame:
    private JTextArea chatArea;
    private JTextField messageField;
    private JComboBox<String> messageTypeComboBox;
+
+   //elementi loginFrame:
+   private JTextField usernameField;
+   private JPasswordField passwordField;
+   private JLabel statusLabel;
+   private boolean isUsernamePhase = true;   //true = inserimento username, false = inserimento password
+   private String currentUsername;           //memorizza l'username corrente
 
    public Window(ClientFunctionalities client) {
       try {
@@ -179,10 +186,16 @@ public class Window extends JFrame implements Runnable {
 
                   boolean connectionResult = client.initializeConnection(serverIP);
                   if (connectionResult){
-                     errorLabel.setText("Connessione  stabilita con successo!");
+                     /*errorLabel.setText("Connessione  stabilita con successo!");
                      serverInputFrame.setVisible(false);    //quando connesso, nascondo il popup di connessione
-                     initializeMainWindow();
-                     mainFrame.setVisible(true);   //e mostro la finestra principale
+                     //initializeMainWindow();
+                     mainFrame.setVisible(true);   //e mostro la finestra principale*/
+
+                     errorLabel.setText("Connessione stabilita con successo!");
+                     serverInputFrame.setVisible(false);
+
+                     // Passa alla finestra di login
+                     initializeLoginWindow();
                   } else {
                      errorLabel.setText("Errore durante l'inizializzazione della connessione");
                   }
@@ -315,5 +328,209 @@ public class Window extends JFrame implements Runnable {
     */
    private void scrollToBottom() {
       chatArea.setCaretPosition(chatArea.getDocument().getLength());
+   }
+
+   /**
+    * Inizializza la finestra di login per username e password
+    */
+   private void initializeLoginWindow() {
+      SwingUtilities.invokeLater(() -> {
+         loginFrame = new JFrame("Login - Negretto Enrico");
+         loginFrame.setSize(400, 250);
+         loginFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+         loginFrame.setLocationRelativeTo(null);
+
+         JPanel panel = new JPanel();
+         panel.setLayout(new GridBagLayout());
+         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+         GridBagConstraints gbc = new GridBagConstraints();
+         gbc.fill = GridBagConstraints.HORIZONTAL;
+         gbc.insets = new Insets(5, 5, 5, 5);
+
+         //label e campo per username
+         JLabel usernameLabel = new JLabel("Username:");
+         gbc.gridx = 0;
+         gbc.gridy = 0;
+         gbc.gridwidth = 2;
+         panel.add(usernameLabel, gbc);
+
+         usernameField = new JTextField(20);
+         gbc.gridx = 0;
+         gbc.gridy = 1;
+         gbc.gridwidth = 2;
+         panel.add(usernameField, gbc);
+
+         //label e campo per password (inizialmente nascosto)
+         JLabel passwordLabel = new JLabel("Password:");
+         gbc.gridx = 0;
+         gbc.gridy = 2;
+         gbc.gridwidth = 2;
+         passwordLabel.setVisible(false);
+         panel.add(passwordLabel, gbc);
+
+         passwordField = new JPasswordField(20);
+         gbc.gridx = 0;
+         gbc.gridy = 3;
+         gbc.gridwidth = 2;
+         passwordField.setVisible(false);
+         panel.add(passwordField, gbc);
+
+         //label per messaggi di stato
+         statusLabel = new JLabel(" ");
+         statusLabel.setForeground(Color.RED);
+         gbc.gridx = 0;
+         gbc.gridy = 4;
+         gbc.gridwidth = 2;
+         panel.add(statusLabel, gbc);
+
+         //pulsante invio
+         JButton submitButton = new JButton("Invia");
+         gbc.gridx = 0;
+         gbc.gridy = 5;
+         gbc.gridwidth = 2;
+         gbc.anchor = GridBagConstraints.CENTER;
+         panel.add(submitButton, gbc);
+
+         //actionListener per il pulsante e per il tasto Invio nei campi di testo
+         ActionListener submitAction = e -> {
+            if (isUsernamePhase) {
+               submitUsername();
+            } else {
+               submitPassword();
+            }
+         };
+
+         submitButton.addActionListener(submitAction);
+         usernameField.addActionListener(submitAction);
+         passwordField.addActionListener(submitAction);
+
+         loginFrame.add(panel);
+         loginFrame.setVisible(true);
+
+         //focus iniziale sul campo username
+         usernameField.requestFocusInWindow();
+      });
+   }
+
+   /**
+    * Gestisce l'invio dell'username
+    */
+   private void submitUsername() {
+      String username = usernameField.getText().trim();
+      if (username.isEmpty()) {
+         statusLabel.setText("Username non può essere vuoto");
+         statusLabel.setForeground(Color.RED);
+         return;
+      }
+
+      // Salva l'username per l'uso successivo
+      currentUsername = username;
+
+      // Invia l'username al server
+      log.debug("Invio username: {}", username);
+      ClientFunctionalities.sendMessageToServer("USERNAME-" + username);
+
+      // Qui dovresti attendere la risposta dal server
+      // Per simulare questo, imposta un listener che verrà chiamato quando arriva la risposta
+
+      // Nota: il codice seguente è solo un esempio, dovrai implementare un vero meccanismo
+      // per gestire le risposte dal server
+
+      // Simuliamo una risposta positiva dal server per questo esempio
+      processServerResponse("USERNAME-OK");
+   }
+
+   /**
+    * Gestisce l'invio della password
+    */
+   private void submitPassword() {
+      String password = new String(passwordField.getPassword()).trim();
+      if (password.isEmpty()) {
+         statusLabel.setText("Password non può essere vuota");
+         statusLabel.setForeground(Color.RED);
+         return;
+      }
+
+      //invia la password al server
+      log.debug("Invio password per l'utente: {}", currentUsername);
+      ClientFunctionalities.sendMessageToServer("PASSWORD-" + password);
+
+      // Qui dovresti attendere la risposta dal server
+      // Come nell'esempio precedente, questo è solo un esempio
+
+      //simulazione risposta positiva dal server
+      processServerResponse("PASSWORD-OK");
+   }
+
+   /**
+    * Elabora la risposta del server per login
+    *
+    * @param response La risposta del server
+    */
+   public void processServerResponse(String response) {
+      log.debug("Risposta dal server: {}", response);
+
+      SwingUtilities.invokeLater(() -> {
+         if (response.equals("USERNAME-OK")) {
+            //username accettato, passa alla fase password
+            isUsernamePhase = false;
+            statusLabel.setText("Username accettato. Inserire la password.");
+            statusLabel.setForeground(new Color(0, 150, 0));
+
+            //mostra i campi per la password
+            Component[] components = ((JPanel) loginFrame.getContentPane().getComponent(0)).getComponents();
+            for (Component component : components) {
+               if (component instanceof JLabel && ((JLabel) component).getText().equals("Password:")) {
+                  component.setVisible(true);
+               }
+               if (component instanceof JPasswordField) {
+                  component.setVisible(true);
+               }
+            }
+
+            //sposta il focus sul campo password
+            passwordField.requestFocusInWindow();
+
+         } else if (response.equals("USERNAME-NOTFOUND")) {
+            //username non trovato, torna alla fase username
+            isUsernamePhase = true;
+            statusLabel.setText("Username non trovato. Riprova.");
+            statusLabel.setForeground(Color.RED);
+            usernameField.setText("");
+            usernameField.requestFocusInWindow();
+
+         } else if (response.equals("PASSWORD-OK")) {
+            //password corretta, procedi alla finestra della chat
+            statusLabel.setText("Login riuscito!");
+            statusLabel.setForeground(new Color(0, 150, 0));
+            setMainWindowVisible(true);
+
+            //chiudi la finestra di login e apri la finestra della chat
+            loginFrame.setVisible(false);
+            initializeMainWindow();
+
+         } else if (response.equals("PASSWORD-WRONG")) {
+            //password errata, torna alla fase username
+            isUsernamePhase = true;
+            statusLabel.setText("Password errata. Riprova con un altro username.");
+            statusLabel.setForeground(Color.RED);
+
+            //nascondi i campi per la password
+            Component[] components = ((JPanel) loginFrame.getContentPane().getComponent(0)).getComponents();
+            for (Component component : components) {
+               if (component instanceof JLabel && ((JLabel) component).getText().equals("Password:")) {
+                  component.setVisible(false);
+               }
+               if (component instanceof JPasswordField) {
+                  component.setVisible(false);
+                  ((JPasswordField) component).setText("");
+               }
+            }
+
+            usernameField.setText("");
+            usernameField.requestFocusInWindow();
+         }
+      });
    }
 }
