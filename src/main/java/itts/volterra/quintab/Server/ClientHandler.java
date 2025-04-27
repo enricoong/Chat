@@ -243,30 +243,21 @@ public class ClientHandler implements Runnable {
         } else {
             //c'è già un utente loggato
 
-            //TODO, temp:
-
-            //gestione dei messaggi per utenti loggati
-            if (message.startsWith("BROADCAST-")) {
-                //gestione dei messaggi di broadcast dagli utenti
-                String broadcastContent = message.substring(10);
-
-                //prepara il messaggio di broadcast con lo username del mittente
-                String broadcastMessage = "MSG-" + currentUser + "-" + broadcastContent;
-
-                //invia il messaggio a tutti gli altri client
-                if (server != null) {
-                    server.broadcastMessage(broadcastMessage, true, this);
-                    log.info("Broadcast da '{}': {}", currentUser, broadcastContent);
+            //TODO cerca un '-' anche se il messaggio grezzo non lo ha
+            String prefix = message.substring(0, message.indexOf('-'));
+            String content = message.substring(message.indexOf('-'));
+            switch (prefix){
+                case "BROADCAST":{
+                    if (server != null){
+                        server.broadcastMessage(content, true, this);
+                    } else {
+                        log.warn("Si è tentato di inviare un messaggio broadcast, ma il server non è stato collegato");
+                    }
                 }
-            } else if (message.startsWith("PRIVATE-")) {
-                //esempio di gestione di messaggi privati (formato: "PRIVATE-destinatario-contenuto")
-                //questa è una funzionalità che potrebbe essere implementata in futuro
-                log.info("Messaggio privato ricevuto da {}: {}", currentUser, message);
-                sendMessageToClient("SYSTEM-PRIVATE_NOT_IMPLEMENTED");
-            } else {
-                //altri messaggi non riconosciuti
-                log.info("Messaggio non riconosciuto da '{}': {}", currentUser, message);
-                sendMessageToClient("SYSTEM-UNKNOWN_COMMAND");
+
+                case null, default:{
+                    log.debug("Temp");
+                }
             }
         }
     }

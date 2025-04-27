@@ -86,7 +86,7 @@ public class Client implements Runnable {
             stop = true;
             sendMessageToServer(userInput);
          } else {
-            sendMessageToServer("MSG-" + userInput);
+            sendMessageToServer(userInput);
          }
       } while (!stop);
 
