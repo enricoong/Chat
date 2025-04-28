@@ -244,19 +244,39 @@ public class ClientHandler implements Runnable {
             //c'è già un utente loggato
 
             //TODO cerca un '-' anche se il messaggio grezzo non lo ha
-            String prefix = message.substring(0, message.indexOf('-'));
-            String content = message.substring(message.indexOf('-'));
+            String prefix = message.substring(0, message.indexOf(' '));
+            log.debug("Prefix: '{}'", prefix);
+            String content = message.substring(message.indexOf(' ') + 1);
             switch (prefix){
-                case "BROADCAST":{
+                case "/broadcast":{
                     if (server != null){
-                        server.broadcastMessage(content, true, this);
+                        server.broadcastMessage(content, false, this);
                     } else {
                         log.warn("Si è tentato di inviare un messaggio broadcast, ma il server non è stato collegato");
                     }
+
+                    break;
                 }
 
-                case null, default:{
-                    log.debug("Temp");
+                case "/msg":{
+                    if (server != null){
+                        //ora devo capire per chi è il messaggio
+                        String receiverUsername = content.substring(0, content.indexOf(' '));   //substring da inizio content a prossimo spazio
+                        String messageToSend = content.substring(content.indexOf(' ') + 1);
+                        log.debug("Messaggio da inviare al client '{}': '{}'", receiverUsername, messageToSend);
+
+                        server.sendMessageToClient(receiverUsername, messageToSend);
+                    } else {
+                        log.warn("Si è tentato di inviare un messaggio privato, ma il server non è stato collegato");
+                    }
+
+                    break;
+                }
+
+                default:{
+                    log.debug("Prefisso non riconosciuto: '{}'", prefix);
+
+                    break;
                 }
             }
         }

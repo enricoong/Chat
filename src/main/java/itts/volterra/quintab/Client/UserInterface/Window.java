@@ -304,7 +304,7 @@ public class Window extends JFrame implements Runnable {
          String messagePrefix = "";
          switch (messageType) {
             case "Messaggio Privato":{
-               messagePrefix = "PRVMSG-";
+               messagePrefix = "PRIVATE-";
 
                break;
             }

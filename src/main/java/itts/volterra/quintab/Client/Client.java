@@ -77,9 +77,19 @@ public class Client implements Runnable {
 
       //comunicazione
       log.warn("--- Scrivi 'STOP' per terminare il programma ---");
+      log.warn("Scrivi un messaggio quando vuoi, premi 'Invio' per inviarlo");
+      log.warn("------ Comandi ------");
+      log.warn("Messaggio privato:  /msg nomeUtente messaggio");
+      log.warn("Broadcast:          /broadcast messaggio");
+      log.warn("------ Have fun :D ------");
+
       String userInput;
+      //ora vorrei che il client aspettasse un messaggio del server, ma se scrivo comunque invii quello che scrivo
+      Thread receiverThread = new Thread(this::messageListener);
+      receiverThread.start();
+
       do {
-         System.out.print("Scrivi >");
+         //System.out.print("Scrivi >");
          userInput = kbInput.nextLine().trim();
          if(userInput.equals("STOP")){
             //stop
@@ -334,6 +344,13 @@ public class Client implements Runnable {
       }
 
       return null;
+   }
+
+   /**
+    * Ascolta messaggi e li logga
+    */
+   private void messageListener() {
+      log.info(waitAndDecryptServerMessage());
    }
 
    private void createNewUser() {
