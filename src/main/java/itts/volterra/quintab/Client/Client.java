@@ -111,9 +111,12 @@ public class Client implements Runnable {
       String username = null;
       while (!authenticated) {
          if (!usernameInDatabase) {
-            System.out.print("Inserisci il tuo username: ");
-            username = kbInput.nextLine().trim();  //acquisisco input
-            log.info("Username inserito: '{}'", username);
+            do {
+               System.out.print("Inserisci il tuo username: ");
+               username = kbInput.nextLine().trim();  //acquisisco input
+            } while (username.trim().isEmpty());   //controllo che username non sia vuoto
+            log.debug("Username inserito: '{}'", username);
+            //qui sarebbe carino un controllo dello username che non sia vuoto
             sendMessageToServer("USRNM-" + username);   //invio username al server
          }
 
@@ -144,7 +147,7 @@ public class Client implements Runnable {
                System.out.print("Vuoi creare un nuovo utente? [Y/N] >");
                char choice = kbInput.nextLine().trim().charAt(0);  //acquisisco input
                if (choice == 'Y' || choice == 'y') {
-                  createNewUser();
+                  createNewUser(username);
                } else if (choice == 'N' || choice == 'n') {
                   log.info("Ok, ricomincio autenticazione");
                } else {
@@ -353,17 +356,26 @@ public class Client implements Runnable {
       log.info(waitAndDecryptServerMessage());
    }
 
-   private void createNewUser() {
-      System.out.print("Inserisci lo username del nuovo utente >");
-      String newUsername = kbInput.nextLine().trim();  //acquisisco input
+   /**
+    * Crea un nuovo utente, dato il nuovo username
+    *
+    * @param newUsername Nuovo username
+    */
+   private void createNewUser(String newUsername) {
+      if (newUsername == null || newUsername.trim().isEmpty()) {
+         log.warn("Username non valido, annullo creazione utente");
+         return;  //username non valido, non creo utente
+      }
+
+      log.info("Stai creando un nuovo utente '{}'", newUsername);
       System.out.print("Inserisci la password del nuovo utente >");
       String newPwHash = null;
       try {
          newPwHash = SHA256.encrypt(kbInput.nextLine().trim());  //acquisisco input
       } catch (Exception e) {
          log.error("Errore durante la criptazione della password");
-
       }
+
       System.out.print("Reinserisci la password >");
       String newPwHashCheck = null;
       try {
@@ -373,7 +385,8 @@ public class Client implements Runnable {
       }
       if (newPwHash != null && newPwHash.equals(newPwHashCheck)) {
          //ok le due pw sono uguali
-         Database.addUser(newUsername, newPwHash);      } else {
+         Database.addUser(newUsername, newPwHash);
+      } else {
          //folpo te ga sbaja a reinserire 'e password
          log.warn("Le password non corrispondono, operazione annullata");
       }

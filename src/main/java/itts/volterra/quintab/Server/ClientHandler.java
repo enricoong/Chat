@@ -242,41 +242,35 @@ public class ClientHandler implements Runnable {
             }
         } else {
             //c'è già un utente loggato
+            //TODO: gestione comandi
+            
+            //mi salvo tutti i prefissi
+            String  msgPrefix = "msg",
+                    broadcastPrefix = "broadcast";
+            
+            //gestisco tutte le possibilità dei prefissi, e per ognuna mi calcolo
+            // il 'postSpaceContent' sommando lunghezza del prefisso e 2 (ovvero i caratteri '/' e lo spazio post prefix)
+            if (message.startsWith('/' + msgPrefix + ' ')){
+                String postSpaceContent = message.substring(2 + msgPrefix.length());
 
-            //TODO cerca un '-' anche se il messaggio grezzo non lo ha
-            String prefix = message.substring(0, message.indexOf(' '));
-            log.debug("Prefix: '{}'", prefix);
-            String content = message.substring(message.indexOf(' ') + 1);
-            switch (prefix){
-                case "/broadcast":{
-                    if (server != null){
-                        server.broadcastMessage(content, false, this);
-                    } else {
-                        log.warn("Si è tentato di inviare un messaggio broadcast, ma il server non è stato collegato");
-                    }
+                if (server != null){
+                    //ora devo capire per chi è il messaggio
+                    //TODO fixare controlli di presenza spazi
+                    String receiverUsername = postSpaceContent.substring(0, postSpaceContent.indexOf(' '));   //substring da inizio content a prossimo spazio
+                    String messageToSend = postSpaceContent.substring(postSpaceContent.indexOf(' ') + 1);
+                    log.debug("Messaggio da inviare al client '{}': '{}'", receiverUsername, messageToSend);
 
-                    break;
+                    server.sendMessageToClient(receiverUsername, messageToSend);
+                } else {
+                    log.warn("Si è tentato di inviare un messaggio privato, ma il server non è stato collegato");
                 }
+            } else if (message.startsWith('/' + broadcastPrefix + ' ')) {
+                String postSpaceContent = message.substring(2 + broadcastPrefix.length());
 
-                case "/msg":{
-                    if (server != null){
-                        //ora devo capire per chi è il messaggio
-                        String receiverUsername = content.substring(0, content.indexOf(' '));   //substring da inizio content a prossimo spazio
-                        String messageToSend = content.substring(content.indexOf(' ') + 1);
-                        log.debug("Messaggio da inviare al client '{}': '{}'", receiverUsername, messageToSend);
-
-                        server.sendMessageToClient(receiverUsername, messageToSend);
-                    } else {
-                        log.warn("Si è tentato di inviare un messaggio privato, ma il server non è stato collegato");
-                    }
-
-                    break;
-                }
-
-                default:{
-                    log.debug("Prefisso non riconosciuto: '{}'", prefix);
-
-                    break;
+                if (server != null){
+                    server.broadcastMessage(postSpaceContent, false, this);
+                } else {
+                    log.warn("Si è tentato di inviare un messaggio broadcast, ma il server non è stato collegato");
                 }
             }
         }
