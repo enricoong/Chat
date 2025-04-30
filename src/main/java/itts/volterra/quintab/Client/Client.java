@@ -117,7 +117,7 @@ public class Client implements Runnable {
             do {
                System.out.print("Inserisci il tuo username: ");
                username = kbInput.nextLine().trim();  //acquisisco input
-            } while (username.trim().isEmpty());   //controllo che username non sia vuoto
+            } while (username.trim().isEmpty() && !username.equalsIgnoreCase("server"));   //controllo che username non sia vuoto o sia "SERVER"
             log.debug("Username inserito: '{}'", username);
             //qui sarebbe carino un controllo dello username che non sia vuoto
             sendMessageToServer("USRNM-" + username);   //invio username al server
@@ -254,11 +254,28 @@ public class Client implements Runnable {
       if (AESKey.isDestroyed()){
          log.warn("Non è stato possibile inviare il messaggio perché la chiave AES è stata distrutta");
          return;
+      } else if (message == null || message.trim().isEmpty()) {
+         log.warn("Il messaggio che si stava tentando di inviare è null o vuoto, operazione annullata");
+         return;
+      }
+
+      String serializedMessage = null;
+      String tempLoggedUser;
+      if (loggedUser == null){
+         tempLoggedUser = "STILLNOTLOGGEDIN";
+      } else {
+         tempLoggedUser = loggedUser;
+      }
+
+      try {
+         serializedMessage = JsonHandler.serialize(new Message(tempLoggedUser, message, System.currentTimeMillis()));
+      } catch (IOException e) {
+         log.error("Errore durante la serializzazione del messaggio: {}", e.getMessage());
       }
 
       String encryptedMessage;
       try {
-         encryptedMessage = AES.encrypt(message, AESKey);  //cripto messaggio
+         encryptedMessage = AES.encrypt(serializedMessage, AESKey);  //cripto messaggio
       } catch (Exception e){
          log.warn("Errore durante la criptazione del messaggio, non è stato possibile inviare il messaggio");
          return;

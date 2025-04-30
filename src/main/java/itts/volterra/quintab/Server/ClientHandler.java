@@ -83,19 +83,24 @@ public class ClientHandler implements Runnable {
                 while (isRunning && !client.isClosed()) {
                     boolean stop = false;
                     do {
-                        String message = waitAndDecryptClientMessage();
-                        log.debug("Messaggio ricevuto: '{}'", message);
+                        Message deserializedMessage = waitAndDecryptClientMessage();
 
-                        if (message != null) {
-                            if (message.equalsIgnoreCase("STOP")){
-                                stop = true;
-                                closeConnection();
+                        if (deserializedMessage.getMessage() != null){
+                            log.debug("Messaggio ricevuto da '{}': '{}'", deserializedMessage.getUsername(), deserializedMessage.getMessage());
+
+                            if (deserializedMessage.getMessage() != null) {
+                                if (deserializedMessage.getMessage().equalsIgnoreCase("STOP")){
+                                    stop = true;
+                                    closeConnection();
+                                } else {
+                                    //elabora il messaggio e invia risposta
+                                    processMessage(deserializedMessage.getMessage());
+                                }
                             } else {
-                                //elabora il messaggio e invia risposta
-                                processMessage(message);
+                                log.warn("Il messaggio ricevuto è 'null'");
                             }
                         } else {
-                            log.warn("Il messaggio ricevuto è 'null'");
+                           log.warn("Messaggio ricevuto vuoto, o errore durante decriptazione/deserializzazione");
                         }
                     } while (!stop);
                 }
@@ -245,11 +250,11 @@ public class ClientHandler implements Runnable {
         } else {
             //c'è già un utente loggato
             //TODO: gestione comandi
-            
+
             //mi salvo tutti i prefissi
             String  msgPrefix = "msg",
                     broadcastPrefix = "broadcast";
-            
+
             //gestisco tutte le possibilità dei prefissi, e per ognuna mi calcolo
             // il 'postSpaceContent' sommando lunghezza del prefisso e 2 (ovvero i caratteri '/' e lo spazio post prefix)
             if (message.startsWith('/' + msgPrefix + ' ')){
@@ -286,19 +291,22 @@ public class ClientHandler implements Runnable {
     public void sendMessageToClient(String message) {
         if (isRunning){
            try {
-              String serializedMessage = JsonHandler.serialize(new Message("SERVER", message, System.currentTimeMillis()));  //serializzo il messaggio
-              String encryptedMessage = AES.encrypt(serializedMessage, AESKey);   //cripto il messaggio
-              out.println(encryptedMessage);        //invio il messaggio al client
+              //serializzo il messaggio
+              String serializedMessage = JsonHandler.serialize(new Message("SERVER", message, System.currentTimeMillis()));
+              //cripto il messaggio
+              String encryptedMessage = AES.encrypt(serializedMessage, AESKey);
+              //invio il messaggio al client
+              out.println(encryptedMessage);
            } catch (Exception e) {
-              log.error("Errore durante l'invio di un messaggio, {}", e.getMessage());
-              log.debug("Errore durante l'invio del seguente messaggio: {}", message);
+               log.error("Errore durante l'invio di un messaggio, {}", e.getMessage());
+               log.debug("Errore durante l'invio del seguente messaggio: {}", message);
            }
         } else {
             log.error("Errore durante l'invio di un messaggio al client: la connessione è terminata");
         }
     }
 
-    private String waitAndDecryptClientMessage() {
+    private Message waitAndDecryptClientMessage() {
         String encryptedMessage = null;
 
         try {
@@ -318,11 +326,19 @@ public class ClientHandler implements Runnable {
 
         log.debug("Messaggio ricevuto (grezzo): {}", encryptedMessage);
 
-        try {
-            return AES.decrypt(encryptedMessage, AESKey);
-        } catch (Exception e) {
-            log.error("Errore durante la decriptazione del messaggio: {}", e.getMessage());
-        }
+       String decryptedMessage = null;
+       try {
+          decryptedMessage = AES.decrypt(encryptedMessage, AESKey);
+       } catch (Exception e) {
+          log.error("Errore durante la decriptazione del messaggio: {}", e.getMessage());
+          return null;
+       }
+
+       try {
+          return JsonHandler.deserialize(decryptedMessage);
+       } catch (IOException e) {
+          log.error("Errore durante la deserializzazione del messaggio: {}", e.getMessage());
+       }
 
         return null;
     }

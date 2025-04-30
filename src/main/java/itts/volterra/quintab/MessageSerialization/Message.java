@@ -1,10 +1,11 @@
 package itts.volterra.quintab.MessageSerialization;
 
-import java.net.Socket;
-
 public class Message {
    private String username, message;
-   private long timestamp;
+   private long timestamp = 0;
+
+   //costruttore predefinito richiesto da Jackson
+   public Message() {}
 
    public Message(String username, String message, long timestamp) {
       this.username = username;
@@ -22,5 +23,9 @@ public class Message {
 
    public long getTimestamp() {
       return timestamp;
+   }
+
+   public boolean isEmpty() {
+      return username.isEmpty() && message.isEmpty() && timestamp == 0;
    }
 }
