@@ -1,4 +1,4 @@
-package itts.volterra.quintab.Features;
+package itts.volterra.quintab.Encryption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 

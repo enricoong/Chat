@@ -1,6 +1,8 @@
 package itts.volterra.quintab.Server;
 
-import itts.volterra.quintab.Features.AES;
+import itts.volterra.quintab.Encryption.AES;
+import itts.volterra.quintab.MessageSerialization.JsonHandler;
+import itts.volterra.quintab.MessageSerialization.Message;
 import itts.volterra.quintab.Server.Database.Database;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,7 +26,7 @@ import static itts.volterra.quintab.Server.Server.DEFAULT_P;
 public class ClientHandler implements Runnable {
     public boolean isObjectCreated;
     private final Logger log = LogManager.getLogger(ClientHandler.class);
-    private Socket socket;
+    private Socket client;
     private BufferedReader in;
     private PrintWriter out;
     private BigInteger serverPrivateKey;
@@ -42,11 +44,11 @@ public class ClientHandler implements Runnable {
      * @param client Socket del client da gestire
      */
     public ClientHandler(Socket client) {
-        this.socket = client;
+        this.client = client;
 
         try {
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+            out = new PrintWriter(client.getOutputStream(), true);
 
             //genera chiave privata del server
             serverPrivateKey = generatePrivateKey();
@@ -78,7 +80,7 @@ public class ClientHandler implements Runnable {
                 log.debug("Chiave AES: {}", java.util.Arrays.hashCode(AESKey.getEncoded()));
                 log.info("Chiave AES creata con successo");
 
-                while (isRunning && !socket.isClosed()) {
+                while (isRunning && !client.isClosed()) {
                     boolean stop = false;
                     do {
                         String message = waitAndDecryptClientMessage();
@@ -134,7 +136,7 @@ public class ClientHandler implements Runnable {
             try {
                 if (in != null) in.close();
                 if (out != null) out.close();
-                if (socket != null && !socket.isClosed()) socket.close();
+                if (client != null && !client.isClosed()) client.close();
 
                 //rimuove questo client dalla lista dei client attivi nel server
                 if (server != null) {
@@ -284,11 +286,12 @@ public class ClientHandler implements Runnable {
     public void sendMessageToClient(String message) {
         if (isRunning){
            try {
-              String encryptedMessage = AES.encrypt(message, AESKey);   //cripto il messaggio
+              String serializedMessage = JsonHandler.serialize(new Message("SERVER", message, System.currentTimeMillis()));  //serializzo il messaggio
+              String encryptedMessage = AES.encrypt(serializedMessage, AESKey);   //cripto il messaggio
               out.println(encryptedMessage);        //invio il messaggio al client
            } catch (Exception e) {
-              log.error("Errore durante l'invio di un messaggio", e);
-              log.debug("Errore durante l'invio del seguente messaggio: {}", message, e);
+              log.error("Errore durante l'invio di un messaggio, {}", e.getMessage());
+              log.debug("Errore durante l'invio del seguente messaggio: {}", message);
            }
         } else {
             log.error("Errore durante l'invio di un messaggio al client: la connessione è terminata");

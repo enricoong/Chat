@@ -1,7 +1,7 @@
 package itts.volterra.quintab.Client;
 
-import itts.volterra.quintab.Features.AES;
-import itts.volterra.quintab.Features.SHA256;
+import itts.volterra.quintab.Encryption.AES;
+import itts.volterra.quintab.Encryption.SHA256;
 import itts.volterra.quintab.Server.Database.Database;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

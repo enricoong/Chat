@@ -1,4 +1,4 @@
-package itts.volterra.quintab.Features;
+package itts.volterra.quintab.Encryption;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;

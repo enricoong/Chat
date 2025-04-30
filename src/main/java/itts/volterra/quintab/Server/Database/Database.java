@@ -3,7 +3,7 @@ package itts.volterra.quintab.Server.Database;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import itts.volterra.quintab.Features.SHA256;
+import itts.volterra.quintab.Encryption.SHA256;
 
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;

@@ -1,7 +1,9 @@
 package itts.volterra.quintab.Client;
 
-import itts.volterra.quintab.Features.AES;
-import itts.volterra.quintab.Features.SHA256;
+import itts.volterra.quintab.Encryption.AES;
+import itts.volterra.quintab.Encryption.SHA256;
+import itts.volterra.quintab.MessageSerialization.JsonHandler;
+import itts.volterra.quintab.MessageSerialization.Message;
 import itts.volterra.quintab.Server.Database.Database;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,6 +27,7 @@ public class Client implements Runnable {
    private PrintWriter out;
    private final Scanner kbInput = new Scanner(System.in);
    private Socket server;
+   Thread receiverThread;
 
    //parametri Diffie-Hellman
    private BigInteger P, G;
@@ -85,7 +88,7 @@ public class Client implements Runnable {
 
       String userInput;
       //ora vorrei che il client aspettasse un messaggio del server, ma se scrivo comunque invii quello che scrivo
-      Thread receiverThread = new Thread(this::messageListener);
+      receiverThread = new Thread(this::messageListener);
       receiverThread.start();
 
       do {
@@ -120,10 +123,11 @@ public class Client implements Runnable {
             sendMessageToServer("USRNM-" + username);   //invio username al server
          }
 
-         String line = waitAndDecryptServerMessage();
+         //todo: sistemare deserializzazione, qui non lo fa ancora
+         Message message = waitAndDecryptServerMessage();
 
-         log.debug("Messaggio ricevuto: {}", line);
-         switch (line) {
+         log.debug("Messaggio ricevuto (deserializzato): {}", message.getMessage());
+         switch (message.getMessage()) {
             case "USERNAME-OK":{
                //lo username esiste nel database
                usernameInDatabase = true;
@@ -132,7 +136,7 @@ public class Client implements Runnable {
                System.out.print("Inserisci la password: ");
                String pwHash = null;
                try {
-                  pwHash = SHA256.encrypt(kbInput.nextLine().trim());  //acquisisco input
+                  pwHash = SHA256.encrypt(String.valueOf(System.console().readPassword()).trim());  //acquisisco input
                } catch (NoSuchAlgorithmException e) {
                   log.error("errore durante la criptazione della password", e);
                }
@@ -191,7 +195,7 @@ public class Client implements Runnable {
             }
 
             default: {
-               log.warn("Ricevuto il seguente messaggio:{}", line);
+               log.warn("Ricevuto da '{}' il seguente messaggio: '{}'", message.getUsername(), message.getMessage());
                log.warn("Il messaggio ricevuto non è conosciuto, ricomincio autenticazione");
 
                break;
@@ -237,6 +241,7 @@ public class Client implements Runnable {
       }
       out.close();
       kbInput.close();                    //chiudo scanner
+      receiverThread.interrupt();         //fermo thread listener di messaggi
       Thread.currentThread().interrupt(); //fermo thread
    }
 
@@ -321,7 +326,7 @@ public class Client implements Runnable {
       }
    }
 
-   private String waitAndDecryptServerMessage() {
+   private Message waitAndDecryptServerMessage() {
       String encryptedMessage = null;
 
       try {
@@ -340,10 +345,18 @@ public class Client implements Runnable {
 
       log.debug("Messaggio ricevuto (grezzo): {}", encryptedMessage);
 
+      String decryptedMessage = null;
       try {
-         return AES.decrypt(encryptedMessage, AESKey);
+         decryptedMessage = AES.decrypt(encryptedMessage, AESKey);
       } catch (Exception e) {
          log.error("Errore durante la decriptazione del messaggio: {}", e.getMessage());
+         return null;
+      }
+
+      try {
+         return JsonHandler.deserialize(decryptedMessage);
+      } catch (IOException e) {
+         log.error("Errore durante la deserializzazione del messaggio: {}", e.getMessage());
       }
 
       return null;
@@ -353,7 +366,15 @@ public class Client implements Runnable {
     * Ascolta messaggi e li logga
     */
    private void messageListener() {
-      log.info(waitAndDecryptServerMessage());
+      while (true){
+         Message deserializedMessage = waitAndDecryptServerMessage();
+
+         if (deserializedMessage != null){
+            log.info("Messaggio ricevuto da '{}': '{}'", deserializedMessage.getUsername(), deserializedMessage.getMessage());
+         } else {
+            log.warn("Messaggio ricevuto vuoto, o errore durante decriptazione/deserializzazione");
+         }
+      }
    }
 
    /**
