@@ -25,7 +25,7 @@ public class Message {
       return timestamp;
    }
 
-   public boolean isEmpty() {
+   /*public boolean isEmpty() {
       return username.isEmpty() && message.isEmpty() && timestamp == 0;
-   }
+   }*/
 }

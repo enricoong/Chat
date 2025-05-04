@@ -1,5 +1,6 @@
 package itts.volterra.quintab.MessageSerialization;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;

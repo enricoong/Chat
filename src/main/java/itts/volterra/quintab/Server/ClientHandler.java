@@ -80,30 +80,28 @@ public class ClientHandler implements Runnable {
                 log.debug("Chiave AES: {}", java.util.Arrays.hashCode(AESKey.getEncoded()));
                 log.info("Chiave AES creata con successo");
 
-                while (isRunning && !client.isClosed()) {
-                    boolean stop = false;
-                    do {
-                        Message deserializedMessage = waitAndDecryptClientMessage();
+                boolean stop = false;
+                do {
+                    Message deserializedMessage = waitAndDecryptClientMessage();
 
-                        if (deserializedMessage.getMessage() != null){
-                            log.debug("Messaggio ricevuto da '{}': '{}'", deserializedMessage.getUsername(), deserializedMessage.getMessage());
+                    if (deserializedMessage != null){
+                        log.debug("Messaggio ricevuto da '{}': '{}'", deserializedMessage.getUsername(), deserializedMessage.getMessage());
 
-                            if (deserializedMessage.getMessage() != null) {
-                                if (deserializedMessage.getMessage().equalsIgnoreCase("STOP")){
-                                    stop = true;
-                                    closeConnection();
-                                } else {
-                                    //elabora il messaggio e invia risposta
-                                    processMessage(deserializedMessage.getMessage());
-                                }
+                        if (deserializedMessage.getMessage() != null) {
+                            if (deserializedMessage.getMessage().equalsIgnoreCase("STOP")){
+                                stop = true;
+                                closeConnection();
                             } else {
-                                log.warn("Il messaggio ricevuto è 'null'");
+                                //elabora il messaggio e invia risposta
+                                processMessage(deserializedMessage.getMessage());
                             }
                         } else {
-                           log.warn("Messaggio ricevuto vuoto, o errore durante decriptazione/deserializzazione");
+                            log.warn("Il messaggio ricevuto è 'null'");
                         }
-                    } while (!stop);
-                }
+                    } else {
+                       log.warn("Messaggio ricevuto vuoto, o errore durante decriptazione/deserializzazione");
+                    }
+                } while (!stop && isRunning && !client.isClosed());
             } catch (IOException e) {
                 log.error("Errore durante la comunicazione: {}", e.getMessage());
             } finally {
@@ -150,7 +148,7 @@ public class ClientHandler implements Runnable {
 
                 log.info("Connessione chiusa correttamente");
             } catch (IOException e) {
-                log.error("Errore durante la chiusura della connessione: ", e);
+                log.error("Errore durante la chiusura della connessione: {}", e.getMessage());
             }
         } else {
             log.warn("Si è tentato di chiudere la connessione, ma essa è già chiusa");
@@ -307,39 +305,47 @@ public class ClientHandler implements Runnable {
     }
 
     private Message waitAndDecryptClientMessage() {
-        String encryptedMessage = null;
-
-        try {
-            while ((encryptedMessage = in.readLine()) == null){
-                /*wait for a message todo: better thread management*/
-                try {
-                    Thread.sleep(100);  //per evitare il busy-waiting
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    log.error("Thread interrotto durante l'attesa del messaggio", e);
-                }
-            }
-        } catch (IOException e) {
-            log.error("Errore durante l'attesa del messaggio: {}. La connessione verrà terminata.", e.getMessage());
+        if (!isRunning){
+            log.error("Si sta attendendo un messaggio dal client, ma la connessione è già stata terminata");
             closeConnection();
+            return null;
+        } else {
+            String encryptedMessage = null;
+
+            try {
+                while ((encryptedMessage = in.readLine()) == null){
+                    /*wait for a message todo: better thread management*/
+                    try {
+                        Thread.sleep(100);  //per evitare il busy-waiting
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        log.error("Thread interrotto durante l'attesa del messaggio", e);
+                    }
+                }
+            } catch (IOException e) {
+                log.error("Errore durante l'attesa del messaggio: {}. La connessione verrà terminata.", e.getMessage());
+                closeConnection();
+            }
+
+            log.debug("Messaggio ricevuto (grezzo): {}", encryptedMessage);
+
+            String decryptedMessage = null;
+            try {
+                decryptedMessage = AES.decrypt(encryptedMessage, AESKey);
+            } catch (Exception e) {
+                log.error("Errore durante la decriptazione del messaggio: {}", e.getMessage());
+                return null;
+            }
+
+            log.debug("Messaggio ricevuto (decriptato, pre-deserializzazione): {}", decryptedMessage);
+
+            try {
+                return JsonHandler.deserialize(decryptedMessage);
+            } catch (IOException e) {
+                log.error("Errore durante la deserializzazione del messaggio: {}", e.getMessage());
+            }
+
+            return null;
         }
-
-        log.debug("Messaggio ricevuto (grezzo): {}", encryptedMessage);
-
-       String decryptedMessage = null;
-       try {
-          decryptedMessage = AES.decrypt(encryptedMessage, AESKey);
-       } catch (Exception e) {
-          log.error("Errore durante la decriptazione del messaggio: {}", e.getMessage());
-          return null;
-       }
-
-       try {
-          return JsonHandler.deserialize(decryptedMessage);
-       } catch (IOException e) {
-          log.error("Errore durante la deserializzazione del messaggio: {}", e.getMessage());
-       }
-
-        return null;
     }
 }

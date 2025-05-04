@@ -117,7 +117,7 @@ public class Client implements Runnable {
             do {
                System.out.print("Inserisci il tuo username: ");
                username = kbInput.nextLine().trim();  //acquisisco input
-            } while (username.trim().isEmpty() && !username.equalsIgnoreCase("server"));   //controllo che username non sia vuoto o sia "SERVER"
+            } while (username.trim().isEmpty() && !username.equalsIgnoreCase("server") && !username.equalsIgnoreCase("stillnotloggedin"));   //controllo che username non sia vuoto o sia "SERVER"
             log.debug("Username inserito: '{}'", username);
             //qui sarebbe carino un controllo dello username che non sia vuoto
             sendMessageToServer("USRNM-" + username);   //invio username al server
@@ -136,7 +136,8 @@ public class Client implements Runnable {
                System.out.print("Inserisci la password: ");
                String pwHash = null;
                try {
-                  pwHash = SHA256.encrypt(String.valueOf(System.console().readPassword()).trim());  //acquisisco input
+                  //pwHash = SHA256.encrypt(String.valueOf(System.console().readPassword()).trim());  //acquisisco input
+                  pwHash = SHA256.encrypt(kbInput.nextLine().trim());   //acquisisco input
                } catch (NoSuchAlgorithmException e) {
                   log.error("errore durante la criptazione della password", e);
                }
@@ -262,7 +263,7 @@ public class Client implements Runnable {
       String serializedMessage = null;
       String tempLoggedUser;
       if (loggedUser == null){
-         tempLoggedUser = "STILLNOTLOGGEDIN";
+         tempLoggedUser  = "STILLNOTLOGGEDIN";
       } else {
          tempLoggedUser = loggedUser;
       }
