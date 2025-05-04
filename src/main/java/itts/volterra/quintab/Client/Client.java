@@ -4,6 +4,7 @@ import itts.volterra.quintab.Encryption.AES;
 import itts.volterra.quintab.Encryption.SHA256;
 import itts.volterra.quintab.MessageSerialization.JsonHandler;
 import itts.volterra.quintab.MessageSerialization.Message;
+import itts.volterra.quintab.MessageSerialization.TimestampConverter;
 import itts.volterra.quintab.Server.Database.Database;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -388,7 +389,7 @@ public class Client implements Runnable {
          Message deserializedMessage = waitAndDecryptServerMessage();
 
          if (deserializedMessage != null){
-            log.info("Messaggio ricevuto da '{}': '{}'", deserializedMessage.getUsername(), deserializedMessage.getMessage());
+            log.info("[{}] Messaggio ricevuto da '{}': '{}'", TimestampConverter.longToStringWithDate(deserializedMessage.getTimestamp()), deserializedMessage.getUsername(), deserializedMessage.getMessage());
          } else {
             log.warn("Messaggio ricevuto vuoto, o errore durante decriptazione/deserializzazione");
          }

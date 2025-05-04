@@ -93,7 +93,7 @@ public class ClientHandler implements Runnable {
                                 closeConnection();
                             } else {
                                 //elabora il messaggio e invia risposta
-                                processMessage(deserializedMessage.getMessage());
+                                processMessage(deserializedMessage.getMessage(), deserializedMessage.getUsername());
                             }
                         } else {
                             log.warn("Il messaggio ricevuto è 'null'");
@@ -213,7 +213,7 @@ public class ClientHandler implements Runnable {
      *
      * @param message Message received
      */
-    private void processMessage(String message) {
+    private void processMessage(String message, String senderUsername) {
         if (currentUser == null) {
             //al momento non è loggato alcun utente
 
@@ -260,12 +260,13 @@ public class ClientHandler implements Runnable {
 
                 if (server != null){
                     //ora devo capire per chi è il messaggio
-                    //TODO fixare controlli di presenza spazi
+                    //TODO fixare controlli di presenza spazi e
+                    // durante inoltro messaggio, il mittente non deve essere il server, ma il client che ha mandato il messaggio all'inizio
                     String receiverUsername = postSpaceContent.substring(0, postSpaceContent.indexOf(' '));   //substring da inizio content a prossimo spazio
                     String messageToSend = postSpaceContent.substring(postSpaceContent.indexOf(' ') + 1);
                     log.debug("Messaggio da inviare al client '{}': '{}'", receiverUsername, messageToSend);
 
-                    server.sendMessageToClient(receiverUsername, messageToSend);
+                    server.sendMessageToClient(receiverUsername, senderUsername, messageToSend);
                 } else {
                     log.warn("Si è tentato di inviare un messaggio privato, ma il server non è stato collegato");
                 }
@@ -282,7 +283,7 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Scrive nell'output stream di un Socket
+     * Invia un messaggio a un client
      *
      * @param message Messaggio da scrivere
      */
@@ -299,6 +300,30 @@ public class ClientHandler implements Runnable {
                log.error("Errore durante l'invio di un messaggio, {}", e.getMessage());
                log.debug("Errore durante l'invio del seguente messaggio: {}", message);
            }
+        } else {
+            log.error("Errore durante l'invio di un messaggio al client: la connessione è terminata");
+        }
+    }
+
+    /**
+     * Invia un messaggio a un client, con mittente custom
+     *
+     * @param senderUsername Username mittente
+     * @param message Messaggio da scrivere
+     */
+    public void sendMessageToClient(String senderUsername, String message) {
+        if (isRunning){
+            try {
+                //serializzo il messaggio
+                String serializedMessage = JsonHandler.serialize(new Message(senderUsername, message, System.currentTimeMillis()));
+                //cripto il messaggio
+                String encryptedMessage = AES.encrypt(serializedMessage, AESKey);
+                //invio il messaggio al client
+                out.println(encryptedMessage);
+            } catch (Exception e) {
+                log.error("Errore durante l'invio di un messaggio, {}", e.getMessage());
+                log.debug("Errore durante l'invio del seguente messaggio: {}", message);
+            }
         } else {
             log.error("Errore durante l'invio di un messaggio al client: la connessione è terminata");
         }

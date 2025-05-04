@@ -127,6 +127,12 @@ public class Server implements Runnable {
         log.info("Messaggio broadcast inviato a {} client: {}", excludeSender ? activeClients.size() - 1 : activeClients.size(), message);
     }
 
+    /**
+     * Invia un messaggio al client con lo username dato
+     *
+     * @param receiverUsername Username destinatario
+     * @param messageContent Contenuto del messaggio
+     */
     public void sendMessageToClient(String receiverUsername, String messageContent) {
         boolean sent = false;
 
@@ -135,6 +141,36 @@ public class Server implements Runnable {
                 if (client.getCurrentUser().equals(receiverUsername)) {
                     try {
                         client.sendMessageToClient(messageContent);
+                        sent = true;
+                        log.info("Messaggio inviato a '{}': '{}'", client.getCurrentUser(), messageContent);
+                        break;
+                    } catch (Exception e) {
+                        log.error("Errore durante l'invio del messaggio a un client", e);
+                    }
+                }
+            }
+        }
+
+        if (!sent) {
+            log.warn("Messaggio privato non inviato a nessuno, destinatario non trovato");
+        }
+    }
+
+    /**
+     * Invia un messaggio al client con lo username dato, con mittente scelto
+     *
+     * @param receiverUsername Username destinatario
+     * @param senderUsername Username mittente
+     * @param messageContent Contenuto del messaggio
+     */
+    public void sendMessageToClient(String receiverUsername, String senderUsername, String messageContent) {
+        boolean sent = false;
+
+        synchronized (activeClients) {
+            for (ClientHandler client : activeClients) {
+                if (client.getCurrentUser().equals(receiverUsername)) {
+                    try {
+                        client.sendMessageToClient(senderUsername, messageContent);
                         sent = true;
                         log.info("Messaggio inviato a '{}': '{}'", client.getCurrentUser(), messageContent);
                         break;
