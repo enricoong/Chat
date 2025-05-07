@@ -124,7 +124,6 @@ public class Client implements Runnable {
             sendMessageToServer("USRNM-" + username);   //invio username al server
          }
 
-         //todo: sistemare deserializzazione, qui non lo fa ancora
          Message message = waitAndDecryptServerMessage();
 
          log.debug("Messaggio ricevuto (deserializzato): {}", message.getMessage());

@@ -237,6 +237,7 @@ public class ClientHandler implements Runnable {
                     sendMessageToClient("PASSWORD-OK");
                     currentUser = tempUsername; //imposto utente loggato
                     tempUsername = null;    //azzero utente temporaneo
+                    log.debug("Utente loggato: {}", currentUser);
                 } else {
                     //la password non è corretta
                     log.info("La password ricevuta dal client è errata");
@@ -247,7 +248,9 @@ public class ClientHandler implements Runnable {
             }
         } else {
             //c'è già un utente loggato
-            //TODO: gestione comandi
+            //TODO: aggiungere comandi
+            // es.: solo utenti con level 2 possono fare broadcast,
+            // oppure utenti di lv 4 possono chiedere al server la lista client
 
             //mi salvo tutti i prefissi
             String  msgPrefix = "msg",
@@ -260,8 +263,7 @@ public class ClientHandler implements Runnable {
 
                 if (server != null){
                     //ora devo capire per chi è il messaggio
-                    //TODO fixare controlli di presenza spazi e
-                    // durante inoltro messaggio, il mittente non deve essere il server, ma il client che ha mandato il messaggio all'inizio
+                    //TODO fixare controlli di presenza spazi
                     String receiverUsername = postSpaceContent.substring(0, postSpaceContent.indexOf(' '));   //substring da inizio content a prossimo spazio
                     String messageToSend = postSpaceContent.substring(postSpaceContent.indexOf(' ') + 1);
                     log.debug("Messaggio da inviare al client '{}': '{}'", receiverUsername, messageToSend);
@@ -362,7 +364,7 @@ public class ClientHandler implements Runnable {
                 return null;
             }
 
-            log.debug("Messaggio ricevuto (decriptato, pre-deserializzazione): {}", decryptedMessage);
+            log.debug("Messaggio ricevuto (decriptato, serializzato): {}", decryptedMessage);
 
             try {
                 return JsonHandler.deserialize(decryptedMessage);
