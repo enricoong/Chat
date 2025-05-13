@@ -44,10 +44,10 @@ public class Database {
     * @return True se il database esiste/è stato creato | False se errore
     */
    private static boolean createDatabaseIfNotExists() {
-      // Connessione al server MySQL senza specificare un database
-      String url = "jdbc:mysql://localhost:3306/";
-      String user = "root"; //utente predefinito XAMPP
-      String password = ""; //password predefinita XAMPP
+      //connessione al server MySQL senza specificare un database
+      String url = DatabaseConnection.URL;
+      String user = DatabaseConnection.USER;
+      String password = DatabaseConnection.PASSWORD;
 
       try (Connection conn = DriverManager.getConnection(url, user, password)) {
          Statement stmt = conn.createStatement();
